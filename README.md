@@ -8,9 +8,11 @@ also used for inference.
 * TensorFlow 2.x
 * Python 3.x
 * Numpy
-* Pandas
 * Pillow
 * Matplotlib
+* Tqdm
+* Shapely
+* Scikit-learn
 
 A .yaml file has been included that specifies the necessary dependencies. A
 conda environment can be created and activated by running the following

@@ -1,4 +1,4 @@
-# ARUNetSegmentation
+# LineSegmentation
 
 This project contains code necessary to perform line-level segmentation
 in TensorFlow 2. Using the provided scripts, the model can be trained and

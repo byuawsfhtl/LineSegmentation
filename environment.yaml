@@ -1,0 +1,13 @@
+name: lineseg_env
+channels:
+- defaults
+- anaconda
+- conda-forge
+dependencies:
+- python=3.7.3
+- anaconda::tensorflow-gpu=2.1.0
+- anaconda::pillow=7.1.2
+- anaconda::scikit-learn=0.22.1
+- conda-forge::tqdm=4.38
+- conda-forge::matplotlib=3.2.1
+- conda-forge::shapely=1.7.0

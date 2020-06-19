@@ -47,9 +47,9 @@ class ARUSequence(tf.keras.utils.Sequence):
             new_height = desired_size[0]
             new_width = int(desired_size[0] // img_ratio)
         else:
+            # Solve by width
             new_height = int(desired_size[1] * img_ratio)
             new_width = desired_size[1]
-            # Solve by width
 
         img = np.array(img.resize((new_width, new_height)))
 

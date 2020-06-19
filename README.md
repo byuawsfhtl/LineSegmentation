@@ -23,6 +23,14 @@ conda env create -f environment.yaml
 conda activate lineseg_env
 `
 
+## Pre-trained Weights
+
+Pre-trained weights can be found on the BYU Handwriting Lab's Google Drive. Look in the Google Account repo for
+access credentials. The weights can be found under the following paths: ```arunet_baselines``` and ```arunet_seams```
+
+The images that the weights were trained on are also found on the Google Drive and can be found here:
+```baseline_seams_dataset.zip```
+
 ## Usage
 
 ### Train

@@ -11,6 +11,20 @@ from scipy.ndimage.filters import median_filter
 
 def segment_from_predictions(original_image, baseline_prediction, seam_prediction, filename, step_size=1,
                              save_images=True, plot_images=False, save_path='./data/out/snippets'):
+    """
+    Segment the baseline and seam predictions and write the segments to the specified path.
+
+    :param original_image: The original image to be segmented
+    :param baseline_prediction: The predicted baselines (ARU-Net output)
+    :param seam_prediction: The predicted seams (ARU-Net output)
+    :param filename: The name of the file that is being segmented
+    :param step_size: How many columns along the baseline to look at when searching the seam image to find
+                      the bounding polygon
+    :param save_images: Whether or not to save the images that are segmented
+    :param plot_images: Whether or not to plot the images that are segmented
+    :param save_path: The path to save the images to
+    :return: None
+    """
     original_image = tf.squeeze(original_image).numpy()
     baseline_image = tf.squeeze(tf.argmax(baseline_prediction, axis=3)).numpy()
     seam_image = tf.squeeze(seam_prediction[:, :, :, 1])
@@ -60,8 +74,17 @@ def segment_from_predictions(original_image, baseline_prediction, seam_predictio
             plot_image(final_segment, snippet_name)
 
 
-def sharpen_image(seam_image, thresh_start=.1, thresh_end=.9, filter_sizes=(4, 4, 3)):
-    clean_seam_image = np.where(seam_image > thresh_start, 1, 0)
+def sharpen_image(image_prediction, thresh_start=.1, thresh_end=.9, filter_sizes=(4, 4, 3)):
+    """
+    Sharpen an image by using a serious of median filters.
+
+    :param image_prediction: The image prediction
+    :param thresh_start: Threshold at start before filtering for binarization
+    :param thresh_end: Threshold at end after filtering for binarization
+    :param filter_sizes: Sizes of the median filters to be used
+    :return: The sharpened image
+    """
+    clean_seam_image = np.where(image_prediction > thresh_start, 1, 0)
 
     # Perform filtering
     for kernel_size in filter_sizes:
@@ -73,6 +96,14 @@ def sharpen_image(seam_image, thresh_start=.1, thresh_end=.9, filter_sizes=(4, 4
 
 
 def cluster(image, min_points=10):
+    """
+    Cluster the points on the image using the DBSCAN clustering algorithm. Perform some form of skeletonization.
+
+    :param image: The predicted baseline image
+    :param min_points: The minimum number of line pixels (after skeletonization) that must be included for the cluster
+                       to be considered.
+    :return: The baselines as a list of lists of points
+    """
     # Perform clustering according to the DBSCAN algorithm
     points = tf.where(image).numpy()  # Find the coordinates that are non-zero
     clustered_points = DBSCAN(eps=2.5, min_samples=2).fit(points)
@@ -113,6 +144,15 @@ def cluster(image, min_points=10):
 
 
 def search_up(point, image, max_height=20, min_height=4):
+    """
+    Search for a seam point above the given baseline point.
+
+    :param point: The baseline point to be searched from
+    :param image: The image to be searched
+    :param max_height: The max number of pixels to be searched until the max point is returned
+    :param min_height: The min number of pixels to be searched before a seam point can be considered found
+    :return: The found seam point
+    """
     y, x = point
     y_start = y
 
@@ -127,6 +167,15 @@ def search_up(point, image, max_height=20, min_height=4):
 
 
 def search_down(point, image, max_height=12, min_height=2):
+    """
+    Search for a seam point below the given baseline point.
+
+    :param point: The baseline point to be searched from
+    :param image: The image to be searched
+    :param max_height: The max number of pixels to be searched until the max point is returned
+    :param min_height: The min number of pixels to be searched before a seam point can be considered found
+    :return: The found seam point
+    """
     y_max = image.shape[0] - 1
     y, x = point
     y_start = y
@@ -142,8 +191,17 @@ def search_down(point, image, max_height=12, min_height=2):
 
 
 def clean_seam(seam, founds):
+    """
+    Clean the extracted seam by removing outliers
+
+    :param seam: The seam as list of lists
+    :param founds: A list of whether or not the search algorithm found a seam or if the current point is the max value
+    :return: The cleaned seam
+    """
     new_seam = []
 
+    # Iterate over the seams and replace outliers (where a seam point *was not* found) with
+    # a nearby seam point that *was* found
     prev_none_x = -1
     for point, seam_found in zip(seam, founds):
         if seam_found:
@@ -169,6 +227,13 @@ def clean_seam(seam, founds):
 
 
 def save_image(img, path, name):
+    """
+    Save the image in the specified path and name
+    :param img: Image to be saved as numpy array
+    :param path: Path to directory to be saved
+    :param name: Image name
+    :return: None
+    """
     if not os.path.exists(path):
         os.makedirs(path)
 
@@ -177,6 +242,14 @@ def save_image(img, path, name):
 
 
 def plot_image(img, title=None, figsize=(20, 20)):
+    """
+    Plot the image. Requires user input to continue program execution.
+
+    :param img: Image to plot
+    :param title: Title of the plot
+    :param figsize: Size of the plot as tuple
+    :return: None
+    """
     plt.figure(figsize=figsize)
     if title is not None:
         plt.title(title)
@@ -185,6 +258,16 @@ def plot_image(img, title=None, figsize=(20, 20)):
 
 
 def segment_from_polygon(polygon: Polygon, original_image, baseline, cushion=8):
+    """
+    Given a Shapely Polygon, segment the image and return the new image segment
+    with its new corresponding baseline.
+
+    :param polygon: The bounding polygon around the text-line to be extracted
+    :param original_image: The original image that contains the bounding polygon
+    :param baseline: The baseline that corresponds to the given text-line
+    :param cushion: How much whitespace we should add above and below to account for dewarping
+    :return: The segmented image, new baseline corresponding to segmented image
+    """
     poly_coords = polygon.exterior.coords[:]
     bounds = polygon.bounds
 
@@ -217,8 +300,17 @@ def segment_from_polygon(polygon: Polygon, original_image, baseline, cushion=8):
 
 
 def dewarp(img, baseline):
+    """
+    Dewarp the image according to the baseline.
+
+    :param img: Image to be warped
+    :param baseline: The baseline corresponding to the text-line as list of points
+    :return:
+    """
+    # Make a copy so we can modify this image without affecting the original image
     img_copy = img.copy()
 
+    # Find the median y point on the baseline
     baseline_y = [point[0] for point in baseline]
     baseline_median = np.median(baseline_y)
 
@@ -236,6 +328,18 @@ def dewarp(img, baseline):
 
 
 def shift_column(im, column: int, shift: int):
+    """
+    This function will shift a given column in an image up or down.
+    The image will be shifted in-place.
+    Used for dewarping an image in the dewarp function.
+
+    Pixels shifted out of the image will not be wrapped to bottom or top of the image
+
+    :param im: Image whose column will be shifted
+    :param column: Column to shift
+    :param shift: The number of pixels to be shifted up or down
+    :return: None
+    """
     im[:, column] = np.roll(im[:, column], shift, axis=0)
 
     # When shifting, fill the ends with white pixels. Don't roll the numbers.
@@ -246,6 +350,12 @@ def shift_column(im, column: int, shift: int):
 
 
 def final_crop(im):
+    """
+    After text-line extraction and dewarping, there is often a great deal of white space around the image.
+    This function will crop the white space out and return only the image bounded by the text line.
+    :param im: The image to be cropped
+    :return: The cropped image
+    """
     # Mask of non-black pixels (assuming image has a single channel).
     mask = im < 255
 
@@ -263,6 +373,17 @@ def final_crop(im):
 
 
 def sort_lines(lines, img_shape, num_columns=2, kernel_size=10):
+    """
+    This function will sort baselines from top-down. It also has the capability to sort from top-down
+    one column at a time. This can be particularly useful if baselines need to be outputted in a
+    a specific order
+
+    :param lines: The lines to be sorted in list of lists format
+    :param img_shape: tuple giving the image shape (height, width)
+    :param num_columns: The number of columns used when sorting from top-down
+    :param kernel_size: The kernel size used when scanning for baselines from top-down
+    :return: The sorted lines
+    """
     sorted_lines_list = []
 
     height, width = img_shape

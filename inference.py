@@ -30,10 +30,14 @@ def inference(cmd_args):
     :return: None
     """
 
+    # Parse command line arguments and make them accessible in the args object
     args = InfArgParser(cmd_args)
     args.parse()
 
+    # Create Keras sequence to load data
     sequence = ARUSequence(args[IArg.IMG_PATH])
+
+    # Create our ARU-Net Models
     baseline_model = ARUNet()
     seam_model = ARUNet()
 

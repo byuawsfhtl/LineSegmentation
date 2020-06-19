@@ -48,7 +48,7 @@ def inference(cmd_args):
 
         segment_from_predictions(img, baseline_prediction, seam_prediction, img_name,
                                  int(args[IArg.SEGMENTATION_STEP_SIZE]),
-                                 plot_images=args[IArg.SHOULD_PLOT_IMAGES] == 'True', save_path=args[IArg.OUT_PATH])
+                                 plot_images=eval(args[IArg.SHOULD_PLOT_IMAGES]), save_path=args[IArg.OUT_PATH])
 
     print('Finished performing inference.')
 

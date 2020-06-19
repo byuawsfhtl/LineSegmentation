@@ -1,6 +1,6 @@
 import sys
 
-from tensorflow.data import TFRecordDataset
+import tensorflow as tf
 from matplotlib import pyplot as plt
 
 from src.lineseg.dataset.sequence import ARUSequence
@@ -59,7 +59,7 @@ def train_model(cmd_args):
 
     # Create a Keras Sequence so that we can access data
     sequence = ARUSequence(args[TArg.IMG_PATH], args[TArg.LABEL_PATH],
-                           tuple(args[TArg.IMG_DIM_AFTER_RESIZE]))
+                           eval(args[TArg.IMG_DIM_AFTER_RESIZE]))
 
     # Create a tfrecord from the created sequence. This will speed up training dramatically
     create_tfrecord_from_sequence(sequence, args[TArg.TFRECORD_OUT_PATH])
@@ -70,11 +70,11 @@ def train_model(cmd_args):
     val_dataset_size = dataset_size - train_dataset_size
 
     # Create a TFRecordDataset using the newly created tfrecord
-    dataset = TFRecordDataset(args[TArg.TFRECORD_OUT_PATH])\
+    dataset = tf.data.TFRecordDataset(args[TArg.TFRECORD_OUT_PATH])\
         .map(read_tfrecord)\
         .shuffle(buffer_size=1000, reshuffle_each_iteration=True)
-    train_dataset = dataset.take(train_dataset_size).batch(args[TArg.BATCH_SIZE])
-    val_dataset = dataset.skip(val_dataset_size).batch(args[TArg.BATCH_SIZE])
+    train_dataset = dataset.take(train_dataset_size).batch(int(args[TArg.BATCH_SIZE]))
+    val_dataset = dataset.skip(val_dataset_size).batch(int(args[TArg.BATCH_SIZE]))
 
     # Create the trainer object and load in configuration settings
     train = ModelTrainer(epochs=int(args[TArg.EPOCHS]), batch_size=int(args[TArg.BATCH_SIZE]),
@@ -96,7 +96,7 @@ def train_model(cmd_args):
     print('Val IoU:', ious[1])
 
     # Show the graphs if specified by the user
-    if args[TArg.SHOW_GRAPHS] == 'True':
+    if eval(args[TArg.SHOW_GRAPHS]):
         show_graph(losses[0], losses[1], 'Loss')
         show_graph(ious[0], ious[1], 'IoU')
 

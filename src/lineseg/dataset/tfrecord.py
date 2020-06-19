@@ -1,3 +1,5 @@
+import os
+
 import tensorflow as tf
 
 
@@ -9,6 +11,9 @@ def create_tfrecord_from_sequence(sequence, tfrecord_path):
     :param tfrecord_path: Filepath and name for location of TfRecord dataset
     """
     tf.print('Started creating TFRecord Dataset...')
+
+    # Create the filepath if it hasn't already been created
+    os.makedirs(os.path.join(*tfrecord_path.split('/')[:-1]), exist_ok=True)
 
     writer = tf.io.TFRecordWriter(tfrecord_path)
 
@@ -42,7 +47,7 @@ def read_tfrecord(single_record):
     single_record = tf.io.parse_single_example(single_record, feature_description)
 
     image = tf.io.parse_tensor(single_record['image'], out_type=tf.float32)
-    label = tf.io.parse_tensor(single_record['label'], out_type=tf.int64)
+    label = tf.io.parse_tensor(single_record['label'], out_type=tf.float32)
 
     return image, label
 

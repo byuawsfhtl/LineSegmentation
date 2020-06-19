@@ -31,8 +31,24 @@ TRAINING DOCUMENTATION AND SCRIPTS COMING SOON!
 Training can be run with the following command:
 
 `
-python train.py ...
+python train.py --img_path <PATH_TO_IMAGES> --label_path <PATH_TO_GROUND_TRUTH_IMAGES> --model_out <MODEL_WEIGHTS_OUT_PATH>
 `
+
+Optionally, a number of command line arguments can be specified to alter training behavior:
+
+A full list of the arguments include:
+
+* img_path (required): The path to the images in the dataset
+* label_path (required): The path to the ground truth image labels in the dataset
+* model_out (required): The path to store the model weights
+* img_resize (optional): The height and width of the image after it has been resized (default: (768, 1152)
+* epochs (optional): The number of epochs to train (default: 100)
+* batch_size (optional): The number of images in a mini-batch (default:2)
+* weights_path (optional): The path to the pre-trained model weights (default: None)
+* learning_rate (optional): The learning rate the optimizer uses during training (default: 1e-3)
+* train_size (optional): The ratio used to determine the size of the train/validation sets (default: 0.8)
+* tfrecord_out (optional): The path to the created tfrecords file (default: ./data/misc/data.tfrecords)
+* graphs (optional): Whether or not to show graphs of the loss/IoU after training (default: False)
 
 
 ### Inference
@@ -41,12 +57,15 @@ Using the ```inference.py``` script, you can perform inference on a
 pre-trained model.
 
 Inference can be performed by running the following command:
+
 `
 python inference.py --img_path <PATH_TO_IMAGES> --out_path <PATH_TO_OUTPUT_SNIPPETS> --weights_path_baseline <PATH_TO_BASELINE_MODEL_WEIGHTS> --weights_path_seam <PATH_TO_SEAM_MODEL_WEIGHTS>
 `
 
 Optionally, a number of command line arguments can be used to alter inference behavior.
-The full list of parameters include:
+
+The full list of arguments include:
+
 * img_path (required): The path to the images to be inferred
 * out_path (required): The path to the results of the inference (text-line snippets)
 * weights_path_baseline (required): The path to the pre-trained model weights for baselines

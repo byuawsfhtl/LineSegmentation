@@ -47,8 +47,8 @@ def inference(cmd_args):
         seam_prediction = seam_model(tf.expand_dims(img, 0))
 
         segment_from_predictions(img, baseline_prediction, seam_prediction, img_name,
-                                 int(args[IArg.SEGMENTATION_STEP_SIZE]), plot_images=bool(args[IArg.SHOULD_PLOT_IMAGES]),
-                                 save_path=args[IArg.OUT_PATH])
+                                 int(args[IArg.SEGMENTATION_STEP_SIZE]),
+                                 plot_images=args[IArg.SHOULD_PLOT_IMAGES] == 'True', save_path=args[IArg.OUT_PATH])
 
     print('Finished performing inference.')
 

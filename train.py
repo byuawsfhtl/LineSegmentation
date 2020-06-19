@@ -1,7 +1,5 @@
 import sys
 
-from tensorflow import print as tfprint
-from tensorflow.config import list_physical_devices
 from tensorflow.data import TFRecordDataset
 from matplotlib import pyplot as plt
 
@@ -29,7 +27,7 @@ def show_graph(train_metric, val_metric, title):
     plt.show()
 
 
-def train(cmd_args):
+def train_model(cmd_args):
     """
     Train the model according to the parameters given
 
@@ -58,10 +56,6 @@ def train(cmd_args):
     # Parse the command line arguments so that they can be accessible from the newly created args object
     args = TrainArgParser(cmd_args)
     args.parse()
-
-    # Let the user know if we have access to a GPU or not
-    tfprint('Devices Available:', list_physical_devices())
-    print('Devices Available:', list_physical_devices())
 
     # Create a Keras Sequence so that we can access data
     sequence = ARUSequence(args[TArg.IMG_PATH], args[TArg.LABEL_PATH],
@@ -102,7 +96,7 @@ def train(cmd_args):
     print('Val IoU:', ious[1])
 
     # Show the graphs if specified by the user
-    if bool(args[TArg.SHOW_GRAPHS]):
+    if args[TArg.SHOW_GRAPHS] == 'True':
         show_graph(losses[0], losses[1], 'Loss')
         show_graph(ious[0], ious[1], 'IoU')
 
@@ -110,4 +104,4 @@ def train(cmd_args):
 
 
 if __name__ == '__main__':
-    train(sys.argv[1:])
+    train_model(sys.argv[1:])

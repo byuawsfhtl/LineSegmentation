@@ -63,7 +63,8 @@ class ArgParser(ABC):  # Abstract Class
         """
         if type(arg) is not self.arg_type:
             raise Exception('Argument must be of type ' + str(self.arg_type))
-        return self.arg_dict.get(arg)  # Use get method to ensure we return None if dict is empty
+
+        return self.arg_dict.get(arg.value)  # Use get method to ensure we return None if dict is empty
 
     def check_required_args(self, required_args):
         """
@@ -73,8 +74,8 @@ class ArgParser(ABC):  # Abstract Class
         :return: None
         """
         for arg in required_args:
-            if arg not in self.args:
-                raise Exception(self.REQUIRED_PARAM_MESSAGE.format(arg))
+            if arg.value not in self.arg_dict:
+                raise Exception(self.REQUIRED_PARAM_MESSAGE.format(arg.value))
 
     def add_arguments(self):
         """
@@ -84,14 +85,14 @@ class ArgParser(ABC):  # Abstract Class
         """
         index = 0
         while index < len(self.args):
-            if self.args[index] in self.arg_type.__members__:
+            if self.args[index] in [e.value for e in self.arg_type]:
                 self.arg_dict[self.args[index]] = self.args[index + 1]
-                index += 1
+                index += 2
             else:
                 raise Exception('Unexpected command line argument ' + self.args[index])
 
     def __getitem__(self, arg):
-        self.get(arg)
+        return self.get(arg)
 
 
 class TrainArgParser(ArgParser):
@@ -107,13 +108,13 @@ class TrainArgParser(ArgParser):
 
         :return: dictionary with configuration settings
         """
-        self.arg_dict[TArg.IMG_DIM_AFTER_RESIZE] = '(768, 1152)'
-        self.arg_dict[TArg.EPOCHS] = '100'
-        self.arg_dict[TArg.BATCH_SIZE] = '2'
-        self.arg_dict[TArg.LEARNING_RATE] = '1e-3'
-        self.arg_dict[TArg.TRAIN_SIZE] = '0.8'
-        self.arg_dict[TArg.TFRECORD_OUT_PATH] = './data/misc/data.tfrecord'
-        self.arg_dict[TArg.SHOW_GRAPHS] = 'False'
+        self.arg_dict[TArg.IMG_DIM_AFTER_RESIZE.value] = '(768, 1152)'
+        self.arg_dict[TArg.EPOCHS.value] = '100'
+        self.arg_dict[TArg.BATCH_SIZE.value] = '2'
+        self.arg_dict[TArg.LEARNING_RATE.value] = '1e-3'
+        self.arg_dict[TArg.TRAIN_SIZE.value] = '0.8'
+        self.arg_dict[TArg.TFRECORD_OUT_PATH.value] = './data/misc/data.tfrecord'
+        self.arg_dict[TArg.SHOW_GRAPHS.value] = 'False'
 
         # Add Arguments to arg_dict and ensure required args are present
         self.add_arguments()
@@ -134,9 +135,9 @@ class InfArgParser(ArgParser):
         :return: dictionary with configuration settings
         """
         # Set Default Arguments
-        self.arg_dict[IArg.SHOULD_PLOT_IMAGES] = 'False'
-        self.arg_dict[IArg.SEGMENTATION_STEP_SIZE] = '1'
-        self.arg_dict[IArg.IMAGE_DIM_AFTER_RESIZE] = "(768, 1152)"
+        self.arg_dict[IArg.SHOULD_PLOT_IMAGES.value] = 'False'
+        self.arg_dict[IArg.SEGMENTATION_STEP_SIZE.value] = '1'
+        self.arg_dict[IArg.IMAGE_DIM_AFTER_RESIZE.value] = "(768, 1152)"
 
         # Add Arguments to arg_dict and ensure required args are present
         self.add_arguments()

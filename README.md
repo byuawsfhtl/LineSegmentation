@@ -26,7 +26,6 @@ conda activate lineseg_env
 ## Usage
 
 ### Train
-TRAINING DOCUMENTATION AND SCRIPTS COMING SOON!
 
 Training can be run with the following command:
 

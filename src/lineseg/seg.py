@@ -162,11 +162,11 @@ def search_up(point, image, max_height=20, min_height=4):
             return [x, y], False  # Return False if no seam was found
     seam_begin = y
 
-    while y > 0 and y_start - y <= max_height + 5 and (image[y][x] == 1 or y_start - y < min_height):
+    while y > 0 and y_start - y <= max_height * 2 and (image[y][x] == 1 or y_start - y < min_height):
         y -= 1
     seam_end = y
 
-    final_y = (seam_begin + seam_end) // 2
+    final_y = np.floor((seam_begin + seam_end) / 2)
 
     return [x, final_y], True
 
@@ -191,11 +191,11 @@ def search_down(point, image, max_height=12, min_height=2):
             return [x, y], False  # Return False if no seam was found
     seam_begin = y
 
-    while y < y_max and y - y_start <= max_height + 5 and (image[y][x] == 1 or y - y_start < min_height):
+    while y < y_max and y - y_start <= max_height * 2 and (image[y][x] == 1 or y - y_start < min_height):
         y += 1
     seam_end = y
 
-    final_y = (seam_begin + seam_end) // 2
+    final_y = np.ceil((seam_begin + seam_end) / 2)
 
     return [x, final_y], True
 

@@ -46,8 +46,6 @@ class ModelTrainer:
 
         lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(lr, 1, learning_rate_decay)
         self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr_schedule)
-
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr,)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
 
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')

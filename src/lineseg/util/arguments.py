@@ -30,6 +30,7 @@ class TArg(Enum):
     TRAIN_SIZE = '--train_size'
     TFRECORD_OUT_PATH = '--tfrecord_out'
     SHOW_GRAPHS = '--graphs'
+    EPOCHS_PER_SAVE = '--epochs_per_save'
 
 
 class ArgParser(ABC):  # Abstract Class
@@ -115,6 +116,7 @@ class TrainArgParser(ArgParser):
         self.arg_dict[TArg.TRAIN_SIZE.value] = '0.8'
         self.arg_dict[TArg.TFRECORD_OUT_PATH.value] = './data/misc/data.tfrecord'
         self.arg_dict[TArg.SHOW_GRAPHS.value] = 'False'
+        self.arg_dict[TArg.EPOCHS_PER_SAVE] = '10'
 
         # Add Arguments to arg_dict and ensure required args are present
         self.add_arguments()

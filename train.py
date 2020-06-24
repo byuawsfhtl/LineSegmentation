@@ -48,6 +48,8 @@ def train_model(cmd_args):
     * train_size (optional): The ratio used to determine the size of the train/validation sets (default: 0.8)
     * tfrecord_out (optional): The path to the created tfrecords file (default: ./data/misc/data.tfrecords)
     * graphs (optional): Whether or not to show graphs of the loss/IoU after training (default: False)
+    * epochs_per_save (optional): How many epochs will pass before the model weights are saved during
+                                  the training process (default: 10)
 
     :param cmd_args: command line arguments
     :return: None
@@ -79,15 +81,12 @@ def train_model(cmd_args):
     # Create the trainer object and load in configuration settings
     train = ModelTrainer(epochs=int(args[TArg.EPOCHS]), batch_size=int(args[TArg.BATCH_SIZE]),
                          train_dataset=train_dataset, train_dataset_size=train_dataset_size, val_dataset=val_dataset,
-                         val_dataset_size=val_dataset_size, lr=float(args[TArg.LEARNING_RATE]),
-                         weights_path=args[TArg.WEIGHTS_PATH])
+                         val_dataset_size=val_dataset_size, save_path=args[TArg.MODEL_OUT],
+                         lr=float(args[TArg.LEARNING_RATE]), weights_path=args[TArg.WEIGHTS_PATH],
+                         epochs_per_save=int(args[TArg.EPOCHS_PER_SAVE]))
 
     # Train the model
     model, losses, ious = train()
-
-    # Save the Model weights to the specified path
-    model.save_weights(args[TArg.MODEL_OUT])
-    print('Model weights saved to', args[TArg.MODEL_OUT])
 
     # Print the losses, intersection over union over the course of training
     print('Train Losses:', losses[0])

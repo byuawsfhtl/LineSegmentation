@@ -13,8 +13,8 @@ class ModelTrainer:
     Once the object is created, the __call__ method will train and return the results and the
     trained model.
     """
-    def __init__(self, epochs, batch_size, train_dataset, train_dataset_size, val_dataset, val_dataset_size,
-                 lr=4e-4, weights_path=None):
+    def __init__(self, epochs, batch_size, train_dataset, train_dataset_size, val_dataset, val_dataset_size, save_path,
+                 lr=4e-4, weights_path=None, epochs_per_save=10):
         """
         Set up the necessary variables that will be used during training, including the model, optimizer,
         encoder, and other metrics.
@@ -35,6 +35,8 @@ class ModelTrainer:
         self.train_dataset_size = train_dataset_size
         self.val_dataset = val_dataset
         self.val_dataset_size = val_dataset_size
+        self.save_path = save_path
+        self.epochs_per_save = epochs_per_save
 
         self.model = ARUNet()
         if weights_path is not None:
@@ -130,7 +132,12 @@ class ModelTrainer:
                 val_losses.append(self.val_loss.result().numpy())
                 train_ious.append(self.train_iou.result().numpy())
                 val_ious.append(self.val_iou.result().numpy())
+
+                if epoch % self.epochs_per_save == self.epochs_per_save - 1:
+                    self.model.save(self.save_path)
+
         except Exception as e:
             print('Exception caught during training: {0}'.format(e))
         finally:
+            self.model.save(self.save_path)
             return self.model, (train_losses, val_losses), (train_ious, val_ious)

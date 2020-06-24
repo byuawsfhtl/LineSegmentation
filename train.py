@@ -34,7 +34,7 @@ def train_model(cmd_args):
     python train.py --img_path <IMG_PATH> --label_path <IMG_LABEL_PATH> --model_out <WEIGHTS_OUT_PATH>
                     --img_resize <(HEIGHT, WIDTH) AS TUPLE> --epochs <NUM_EPOCHS> --batch_size <BATCH_SIZE>
                     --weights_path <WEIGHTS_IN_PATH> --learning_rate <LEARNING_RATE> --train_size <TRAIN_SET_SPLIT_SIZE>
-                    --tfrecord_out <TFRECORD_OUT_PATH> --graphs <TRUE/FALSE>
+                    --tfrecord_out <TFRECORD_OUT_PATH> --graphs <TRUE/FALSE> --save_best_after <SAVE_AFTER_NUM_EPOCH>
 
     Command Line Arguments:
     * img_path (required): The path to the images in the dataset
@@ -48,8 +48,8 @@ def train_model(cmd_args):
     * train_size (optional): The ratio used to determine the size of the train/validation sets (default: 0.8)
     * tfrecord_out (optional): The path to the created tfrecords file (default: ./data/misc/data.tfrecords)
     * graphs (optional): Whether or not to show graphs of the loss/IoU after training (default: False)
-    * epochs_per_save (optional): How many epochs will pass before the model weights are saved during
-                                  the training process (default: 10)
+    * save_best_after (optional): How many epochs will pass before the model weights are saved (if it has achieved the
+                                  the best accuracy on the validation set) during the training process (default: 25)
 
     :param cmd_args: command line arguments
     :return: None

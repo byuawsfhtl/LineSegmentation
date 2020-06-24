@@ -56,6 +56,8 @@ A full list of the arguments include:
 * train_size (optional): The ratio used to determine the size of the train/validation sets (default: 0.8)
 * tfrecord_out (optional): The path to the created tfrecords file (default: ./data/misc/data.tfrecords)
 * graphs (optional): Whether or not to show graphs of the loss/IoU after training (default: False)
+* save_best_after (optional): How many epochs will pass before the model weights are saved (if it has achieved the
+                              the best accuracy on the validation set) during the training process (default: 25)
 
 
 ### Inference

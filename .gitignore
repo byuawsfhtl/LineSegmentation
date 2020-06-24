@@ -29,3 +29,5 @@ MANIFEST
 # Project Specific
 data/
 *idea/
+*.sh
+slurm*

@@ -142,8 +142,8 @@ class ModelTrainer:
                 # Only save the model if the validation IoU is greater than anything we've seen
                 if val_ious[-1] > best_val_iou and epoch >= self.save_best_after - 1:
                     best_val_iou = val_ious[-1]
-                    self.model.save(self.save_path)
-                    tf.print('Saving model to', self.save_path, '. Val:', best_val_iou)
+                    self.model.save_weights(self.save_path)
+                    tf.print('\nSaving model to', self.save_path, '. Val:', best_val_iou)
 
         except Exception as e:
             print('Exception caught during training: {0}'.format(e))

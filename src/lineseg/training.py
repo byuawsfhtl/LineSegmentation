@@ -14,7 +14,7 @@ class ModelTrainer:
     trained model.
     """
     def __init__(self, epochs, batch_size, train_dataset, train_dataset_size, val_dataset, val_dataset_size, save_path,
-                 lr=4e-4, weights_path=None, epochs_per_save=10):
+                 lr=4e-4, weights_path=None, save_best_after=30, learning_rate_decay=.985):
         """
         Set up the necessary variables that will be used during training, including the model, optimizer,
         encoder, and other metrics.
@@ -27,6 +27,8 @@ class ModelTrainer:
         :param val_dataset_size:
         :param lr:
         :param weights_path:
+        :param save_best_after:
+        :param learning_rate_decay:
         """
 
         self.epochs = epochs
@@ -36,13 +38,16 @@ class ModelTrainer:
         self.val_dataset = val_dataset
         self.val_dataset_size = val_dataset_size
         self.save_path = save_path
-        self.epochs_per_save = epochs_per_save
+        self.save_best_after = save_best_after
 
         self.model = ARUNet()
         if weights_path is not None:
             self.model.load_weights(weights_path)
 
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(lr, 1, learning_rate_decay)
+        self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr_schedule)
+
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr,)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
 
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')
@@ -100,6 +105,7 @@ class ModelTrainer:
         :return: Trained Model, (Train-Loss over time, Validation-Loss over time),
                  (Train-IoU over time, Validation-IoU over time)
         """
+        best_val_iou = 0.0
 
         train_losses, val_losses = [], []
         train_ious, val_ious = [], []
@@ -133,11 +139,13 @@ class ModelTrainer:
                 train_ious.append(self.train_iou.result().numpy())
                 val_ious.append(self.val_iou.result().numpy())
 
-                if epoch % self.epochs_per_save == self.epochs_per_save - 1:
+                # Only save the model if the validation IoU is greater than anything we've seen
+                if val_ious[-1] > best_val_iou and epoch > self.save_best_after:
+                    best_val_iou = val_ious[-1]
                     self.model.save(self.save_path)
+                    tf.print('Saving model to', self.save_path, '. Val:', best_val_iou)
 
         except Exception as e:
             print('Exception caught during training: {0}'.format(e))
         finally:
-            self.model.save(self.save_path)
             return self.model, (train_losses, val_losses), (train_ious, val_ious)

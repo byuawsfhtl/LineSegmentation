@@ -83,7 +83,8 @@ def train_model(cmd_args):
                          train_dataset=train_dataset, train_dataset_size=train_dataset_size, val_dataset=val_dataset,
                          val_dataset_size=val_dataset_size, save_path=args[TArg.MODEL_OUT],
                          lr=float(args[TArg.LEARNING_RATE]), weights_path=args[TArg.WEIGHTS_PATH],
-                         epochs_per_save=int(args[TArg.EPOCHS_PER_SAVE]))
+                         save_best_after=int(args[TArg.SAVE_BEST_AFTER]),
+                         learning_rate_decay=float(args[TArg.LR_DECAY]))
 
     # Train the model
     model, losses, ious = train()

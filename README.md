@@ -58,6 +58,7 @@ A full list of the arguments include:
 * graphs (optional): Whether or not to show graphs of the loss/IoU after training (default: False)
 * save_best_after (optional): How many epochs will pass before the model weights are saved (if it has achieved the
                               the best accuracy on the validation set) during the training process (default: 25)
+* lr_decay (optional): The rate at which the learning rate is decayed after every epoch (default: .985)
 
 
 ### Inference

@@ -117,8 +117,8 @@ class TrainArgParser(ArgParser):
         self.arg_dict[TArg.TRAIN_SIZE.value] = '0.8'
         self.arg_dict[TArg.TFRECORD_OUT_PATH.value] = './data/misc/data.tfrecord'
         self.arg_dict[TArg.SHOW_GRAPHS.value] = 'False'
-        self.arg_dict[TArg.SAVE_BEST_AFTER] = '25'
-        self.arg_dict[TArg.LR_DECAY] = '.985'
+        self.arg_dict[TArg.SAVE_BEST_AFTER.value] = '25'
+        self.arg_dict[TArg.LR_DECAY.value] = '.985'
 
         # Add Arguments to arg_dict and ensure required args are present
         self.add_arguments()

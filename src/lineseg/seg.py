@@ -162,8 +162,17 @@ def search_up(point, image, max_height=20, min_height=4):
             break
         if y_start - y > max_height:
             return [x, y], False  # Return False if no seam was found
+    seam_begin = y
 
-    return [x, y], True
+    while image[y][x] == 1 or y_start - y < min_height:
+        y -= 1
+        if y < 0 or y_start - y > max_height + 5:
+            break
+    seam_end = y
+
+    final_y = (seam_begin - seam_end) // 2
+
+    return [x, final_y], True
 
 
 def search_down(point, image, max_height=12, min_height=2):
@@ -186,8 +195,17 @@ def search_down(point, image, max_height=12, min_height=2):
             break
         if y - y_start > max_height:
             return [x, y], False  # Return False if no seam was found
+    seam_begin = y
 
-    return [x, y], True
+    while image[y][x] == 1 or y - y_start < min_height:
+        y += 1
+        if y > y_max or y - y_start > max_height + 5:  # Bounds check
+            break
+    seam_end = y
+
+    final_y = (seam_end - seam_begin) // 2
+
+    return [x, final_y], True
 
 
 def clean_seam(seam, founds):

@@ -140,7 +140,7 @@ class ModelTrainer:
                 val_ious.append(self.val_iou.result().numpy())
 
                 # Only save the model if the validation IoU is greater than anything we've seen
-                if val_ious[-1] > best_val_iou and epoch > self.save_best_after:
+                if val_ious[-1] > best_val_iou and epoch >= self.save_best_after - 1:
                     best_val_iou = val_ious[-1]
                     self.model.save(self.save_path)
                     tf.print('Saving model to', self.save_path, '. Val:', best_val_iou)

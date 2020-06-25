@@ -44,8 +44,8 @@ class ModelTrainer:
         if weights_path is not None:
             self.model.load_weights(weights_path)
 
-        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(lr, 1, learning_rate_decay)
-        self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr_schedule, clipvalue=100)
+        # lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(lr, 1, learning_rate_decay)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr, clipvalue=100)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
 
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')

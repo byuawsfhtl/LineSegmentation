@@ -267,7 +267,7 @@ def plot_image(img, title=None, figsize=(20, 20)):
     plt.show()
 
 
-def segment_from_polygon(polygon: Polygon, original_image, baseline, cushion=8):
+def segment_from_polygon(polygon: Polygon, original_image, baseline, cushion=20):
     """
     Given a Shapely Polygon, segment the image and return the new image segment
     with its new corresponding baseline.

@@ -143,7 +143,7 @@ def cluster(image, min_points=10):
     return nms_clusters
 
 
-def search_up(point, image, max_height=20, min_height=4):
+def search_up(point, image, max_height=60, min_height=8):
     """
     Search for a seam point above the given baseline point.
 
@@ -171,7 +171,7 @@ def search_up(point, image, max_height=20, min_height=4):
     return [x, final_y], True
 
 
-def search_down(point, image, max_height=12, min_height=2):
+def search_down(point, image, max_height=30, min_height=6):
     """
     Search for a seam point below the given baseline point.
 

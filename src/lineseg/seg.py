@@ -26,13 +26,14 @@ def segment_from_predictions(original_image, baseline_prediction, seam_predictio
     :return: None
     """
     original_image = tf.squeeze(original_image).numpy()
-    baseline_image = tf.squeeze(tf.argmax(baseline_prediction, axis=3)).numpy()
+    # baseline_image = tf.squeeze(tf.argmax(baseline_prediction, axis=3)).numpy()
+    baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
     seam_image = tf.squeeze(seam_prediction[:, :, :, 1])
 
+    sharpened_baseline_image = sharpen_image(baseline_image)
     sharpened_seam_image = sharpen_image(seam_image)
 
-    baselines = cluster(baseline_image)
-
+    baselines = cluster(sharpened_baseline_image)
     baselines = sort_lines(baselines, original_image.shape)
 
     # Search the cleaned-up seam image for upper/lower seams
@@ -106,7 +107,7 @@ def cluster(image, min_points=10):
     """
     # Perform clustering according to the DBSCAN algorithm
     points = tf.where(image).numpy()  # Find the coordinates that are non-zero
-    clustered_points = DBSCAN(eps=2.5, min_samples=2).fit(points)
+    clustered_points = DBSCAN(eps=4, min_samples=2).fit(points)
 
     # Create a list of lists to hold the clusters based on the labeling
     unique_labels = np.unique(clustered_points.labels_)
@@ -385,7 +386,7 @@ def final_crop(im):
     return cropped
 
 
-def sort_lines(lines, img_shape, num_columns=2, kernel_size=10):
+def sort_lines(lines, img_shape, num_columns=1, kernel_size=10):
     """
     This function will sort baselines from top-down. It also has the capability to sort from top-down
     one column at a time. This can be particularly useful if baselines need to be outputted in a

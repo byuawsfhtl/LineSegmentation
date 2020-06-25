@@ -372,6 +372,9 @@ def final_crop(im):
     # Coordinates of non-black pixels.
     coords = np.argwhere(mask)
 
+    if len(coords) == 0:
+        return im  # Return the original image if no black coordinates are found
+
     # Bounding box of non-black pixels.
     x0, y0 = coords.min(axis=0)
     x1, y1 = coords.max(axis=0) + 1  # slices are exclusive at the top

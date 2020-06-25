@@ -14,21 +14,20 @@ class ModelTrainer:
     trained model.
     """
     def __init__(self, epochs, batch_size, train_dataset, train_dataset_size, val_dataset, val_dataset_size, save_path,
-                 lr=4e-4, weights_path=None, save_best_after=30, learning_rate_decay=.985):
+                 lr=1e-3, weights_path=None, save_best_after=25):
         """
         Set up the necessary variables that will be used during training, including the model, optimizer,
         encoder, and other metrics.
 
-        :param epochs:
-        :param batch_size:
-        :param train_dataset:
-        :param train_dataset_size:
-        :param val_dataset:
-        :param val_dataset_size:
-        :param lr:
-        :param weights_path:
-        :param save_best_after:
-        :param learning_rate_decay:
+        :param epochs: The number of epochs to train the model
+        :param batch_size: How many images will be included in a mini-batch
+        :param train_dataset: The train dataset
+        :param train_dataset_size: The size of the train dataset
+        :param val_dataset: The val dataset
+        :param val_dataset_size: The size of the val dataset
+        :param lr: The learning rate
+        :param weights_path: The path to the weights if we are starting from a pre-trained model
+        :param save_best_after: Save model weights (if it achieved best IoU) after how many epochs?
         """
 
         self.epochs = epochs
@@ -44,7 +43,6 @@ class ModelTrainer:
         if weights_path is not None:
             self.model.load_weights(weights_path)
 
-        # lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(lr, 1, learning_rate_decay)
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr, clipvalue=100)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
 
@@ -120,7 +118,8 @@ class ModelTrainer:
                 train_loop = tqdm(total=self.train_dataset_size//self.batch_size, position=0, leave=True)
                 for images, labels in self.train_dataset:
                     self.train_step(images, labels)
-                    train_loop.set_description('Train - Epoch: {}, Loss: {:.4f}, IoU: {:.4f}'.format(epoch, self.train_loss.result(), self.train_iou.result()))
+                    train_loop.set_description('Train - Epoch: {}, Loss: {:.4f}, IoU: {:.4f}'.format(
+                        epoch, self.train_loss.result(), self.train_iou.result()))
                     train_loop.update(1)
                 train_loop.close()
 
@@ -128,7 +127,8 @@ class ModelTrainer:
                 val_loop = tqdm(total=self.val_dataset_size//self.batch_size, position=0, leave=True)
                 for images, labels, in self.val_dataset:
                     self.val_step(images, labels)
-                    val_loop.set_description('Val   - Epoch: {}, Loss: {:.4f}, IoU: {:.4f}'.format(epoch, self.val_loss.result(), self.val_iou.result()))
+                    val_loop.set_description('Val   - Epoch: {}, Loss: {:.4f}, IoU: {:.4f}'.format(
+                        epoch, self.val_loss.result(), self.val_iou.result()))
                     val_loop.update(1)
                 val_loop.close()
 

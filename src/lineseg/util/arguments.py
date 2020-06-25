@@ -31,7 +31,6 @@ class TArg(Enum):
     TFRECORD_OUT_PATH = '--tfrecord_out'
     SHOW_GRAPHS = '--graphs'
     SAVE_BEST_AFTER = '--save_best_after'
-    LR_DECAY = '--lr_decay'
 
 
 class ArgParser(ABC):  # Abstract Class
@@ -112,13 +111,12 @@ class TrainArgParser(ArgParser):
         """
         self.arg_dict[TArg.IMG_DIM_AFTER_RESIZE.value] = '(768, 1152)'
         self.arg_dict[TArg.EPOCHS.value] = '100'
-        self.arg_dict[TArg.BATCH_SIZE.value] = '2'
+        self.arg_dict[TArg.BATCH_SIZE.value] = '1'
         self.arg_dict[TArg.LEARNING_RATE.value] = '1e-3'
         self.arg_dict[TArg.TRAIN_SIZE.value] = '0.8'
         self.arg_dict[TArg.TFRECORD_OUT_PATH.value] = './data/misc/data.tfrecord'
         self.arg_dict[TArg.SHOW_GRAPHS.value] = 'False'
         self.arg_dict[TArg.SAVE_BEST_AFTER.value] = '25'
-        self.arg_dict[TArg.LR_DECAY.value] = '.985'
 
         # Add Arguments to arg_dict and ensure required args are present
         self.add_arguments()

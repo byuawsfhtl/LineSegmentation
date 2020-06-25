@@ -26,14 +26,14 @@ def segment_from_predictions(original_image, baseline_prediction, seam_predictio
     :return: None
     """
     original_image = tf.squeeze(original_image).numpy()
-    # baseline_image = tf.squeeze(tf.argmax(baseline_prediction, axis=3)).numpy()
-    baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
+    baseline_image = tf.squeeze(tf.argmax(baseline_prediction, axis=3)).numpy()
+    # baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
     seam_image = tf.squeeze(seam_prediction[:, :, :, 1])
 
-    sharpened_baseline_image = sharpen_image(baseline_image)
+    # sharpened_baseline_image = sharpen_image(baseline_image)
     sharpened_seam_image = sharpen_image(seam_image)
 
-    baselines = cluster(sharpened_baseline_image)
+    baselines = cluster(baseline_image)
     baselines = sort_lines(baselines, original_image.shape)
 
     # Search the cleaned-up seam image for upper/lower seams
@@ -107,7 +107,7 @@ def cluster(image, min_points=10):
     """
     # Perform clustering according to the DBSCAN algorithm
     points = tf.where(image).numpy()  # Find the coordinates that are non-zero
-    clustered_points = DBSCAN(eps=4, min_samples=2).fit(points)
+    clustered_points = DBSCAN(eps=15, min_samples=2).fit(points)
 
     # Create a list of lists to hold the clusters based on the labeling
     unique_labels = np.unique(clustered_points.labels_)

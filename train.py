@@ -46,6 +46,8 @@ def train_model(cmd_args):
     * weights_path (optional): The path to the pre-trained model weights (default: None)
     * learning_rate (optional): The learning rate the optimizer uses during training (default: 1e-3)
     * train_size (optional): The ratio used to determine the size of the train/validation sets (default: 0.8)
+    * tfrecord_in (optional): The path to a previously created tfrecords file. This argument can be specified to skip
+                              the creation of a tfrecord during training (default: None)
     * tfrecord_out (optional): The path to the created tfrecords file (default: ./data/misc/data.tfrecords)
     * graphs (optional): Whether or not to show graphs of the loss/IoU after training (default: False)
     * save_best_after (optional): How many epochs will pass before the model weights are saved (if it has achieved the
@@ -66,7 +68,12 @@ def train_model(cmd_args):
                            augmentation_rate=int(args[TArg.AUGMENTATION_RATE]))
 
     # Create a tfrecord from the created sequence. This will speed up training dramatically
-    create_tfrecord_from_sequence(sequence, args[TArg.TFRECORD_OUT_PATH])
+    if args[TArg.TFRECORD_IN_PATH] is None:
+        create_tfrecord_from_sequence(sequence, args[TArg.TFRECORD_OUT_PATH])
+        tfrecord_path = args[TArg.TFRECORD_OUT_PATH]
+    # A tfrecord_in path has already been specified. Use this one...
+    else:
+        tfrecord_path = args[TArg.TFRECORD_IN_PATH]
 
     # Get the respective sizes for the dataset splits
     dataset_size = len(sequence)
@@ -74,7 +81,7 @@ def train_model(cmd_args):
     val_dataset_size = dataset_size - train_dataset_size
 
     # Create a TFRecordDataset using the newly created tfrecord
-    dataset = tf.data.TFRecordDataset(args[TArg.TFRECORD_OUT_PATH])\
+    dataset = tf.data.TFRecordDataset(tfrecord_path)\
         .map(read_tfrecord)\
         .shuffle(buffer_size=train_dataset_size, reshuffle_each_iteration=True)
     train_dataset = dataset.take(train_dataset_size).batch(int(args[TArg.BATCH_SIZE]))

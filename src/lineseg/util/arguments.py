@@ -28,6 +28,7 @@ class TArg(Enum):
     WEIGHTS_PATH = '--weights_path'
     LEARNING_RATE = '--learning_rate'
     TRAIN_SIZE = '--train_size'
+    TFRECORD_IN_PATH = '--tfrecord_in'
     TFRECORD_OUT_PATH = '--tfrecord_out'
     SHOW_GRAPHS = '--graphs'
     SAVE_BEST_AFTER = '--save_best_after'

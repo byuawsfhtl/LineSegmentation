@@ -54,6 +54,8 @@ A full list of the arguments include:
 * weights_path (optional): The path to the pre-trained model weights (default: None)
 * learning_rate (optional): The learning rate the optimizer uses during training (default: 1e-3)
 * train_size (optional): The ratio used to determine the size of the train/validation sets (default: 0.8)
+* tfrecord_in (optional): The path to a previously created tfrecords file. This argument can be specified to skip
+                          the creation of a tfrecord during training (default: None)
 * tfrecord_out (optional): The path to the created tfrecords file (default: ./data/misc/data.tfrecords)
 * graphs (optional): Whether or not to show graphs of the loss/IoU after training (default: False)
 * save_best_after (optional): How many epochs will pass before the model weights are saved (if it has achieved the

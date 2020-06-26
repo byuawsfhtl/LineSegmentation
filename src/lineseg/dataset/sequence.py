@@ -21,9 +21,6 @@ def random_augmentation(img, label):
     zy = 1
     shear = 0
 
-    img = tf.squeeze(img)
-    label = tf.squeeze(label)
-
     # Random Flip
     if random.randint(0, 2) == 0:
         img = tf.image.flip_left_right(img)

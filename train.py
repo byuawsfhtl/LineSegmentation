@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from src.lineseg.dataset.sequence import ARUSequence
 from src.lineseg.dataset.tfrecord import create_tfrecord_from_sequence, read_tfrecord
-from src.lineseg.training import ModelTrainer, random_augmentation
+from src.lineseg.training import ModelTrainer
 from src.lineseg.util.arguments import TArg, TrainArgParser
 
 

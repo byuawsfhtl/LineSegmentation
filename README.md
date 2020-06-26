@@ -58,6 +58,8 @@ A full list of the arguments include:
 * graphs (optional): Whether or not to show graphs of the loss/IoU after training (default: False)
 * save_best_after (optional): How many epochs will pass before the model weights are saved (if it has achieved the
                               the best accuracy on the validation set) during the training process (default: 25)
+* augmentation_rate (optional): The rate of extra images that will be applied to the dataset during training. A
+                                rate of 1 means no data augmentation (default: 20)
 
 ### Inference
 

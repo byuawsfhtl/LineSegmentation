@@ -49,7 +49,9 @@ def train_model(cmd_args):
     * tfrecord_out (optional): The path to the created tfrecords file (default: ./data/misc/data.tfrecords)
     * graphs (optional): Whether or not to show graphs of the loss/IoU after training (default: False)
     * save_best_after (optional): How many epochs will pass before the model weights are saved (if it has achieved the
-                                  the best accuracy on the validation set) during the training process (default: 25)
+                                  the best accuracy on the validation set) during the training process (default: 10)
+    * augmentation_rate (optional): The rate of extra images that will be applied to the dataset during training. A
+                                    rate of 1 means no data augmentation (default: 20)
 
     :param cmd_args: command line arguments
     :return: None

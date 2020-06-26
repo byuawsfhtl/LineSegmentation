@@ -139,18 +139,21 @@ class ARUSequence(tf.keras.utils.Sequence):
         :param index: The index number of the image/label to be retrieved
         :return: The image as tensor and (possibly) label as tensor
         """
-        index = index // self.augmentation_rate
+        img_index = index // self.augmentation_rate
 
-        img = self.tensor_image(os.path.join(self.img_path, self.imgs[index]), pil_format="L")
+        img = self.tensor_image(os.path.join(self.img_path, self.imgs[img_index]), pil_format="L")
         img = tf.expand_dims(img, 2)
 
         # FOR TRAINING
         # If a label_path was given, convert the label to a tensor and return it along with the image tensor
         if self.label_path is not None:
-            label = self.tensor_image(os.path.join(self.label_path, self.imgs[index].split('.')[0] + '_gt.jpg'),
+            label = self.tensor_image(os.path.join(self.label_path, self.imgs[img_index].split('.')[0] + '_gt.jpg'),
                                       pil_format="1")
             label = tf.expand_dims(label, 2)
-            img, label = random_augmentation(img, label)
+
+            # Don't perform data augmentation the first time we see this image
+            if index % self.augmentation_rate != 0:
+                img, label = random_augmentation(img, label)
 
             return img, label
 

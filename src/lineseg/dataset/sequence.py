@@ -1,7 +1,62 @@
 import os
+import random
+
 import numpy as np
 from PIL import Image
 import tensorflow as tf
+
+
+def random_augmentation(img, label):
+    """
+    Function to apply random augmentations to the image and label image
+
+    :param img: The image to be transformed
+    :param label: The label to be transformed
+    :return: The transformed image and label
+    """
+    theta = 0
+    tx = 0
+    ty = 0
+    zx = 1
+    zy = 1
+    shear = 0
+
+    img = tf.squeeze(img)
+    label = tf.squeeze(label)
+
+    # Random Flip
+    if random.randint(0, 2) == 0:
+        img = tf.image.flip_left_right(img)
+        label = tf.image.flip_left_right(label)
+    # Random Rotate
+    if random.randint(0, 1):  # .5
+        theta = random.uniform(-5, 5)
+    # Random Shear
+    elif random.randint(0, 1):  # Only do shear if we haven't rotated
+        shear = random.uniform(-5, 5)
+    # Random Zoom
+    if random.randint(0, 2) == 0:
+        zx = random.uniform(0.9, 1.1)
+        zy = random.uniform(0.9, 1.1)
+    # Random Translation
+    if random.randint(0, 1):
+        tx = random.uniform(-35, 35)
+        ty = random.uniform(-35, 35)
+
+    # Apply Affine Transformation
+    img = tf.keras.preprocessing.image.apply_affine_transform(img.numpy(), theta=theta, tx=tx, ty=ty, shear=shear,
+                                                              zx=zx, zy=zy)
+    label = tf.keras.preprocessing.image.apply_affine_transform(label.numpy(), theta=theta, tx=tx, ty=ty, shear=shear,
+                                                                zx=zx, zy=zy)
+
+    # Apply Random Brightness Transformation
+    if random.randint(0, 1):
+        img = tf.keras.preprocessing.image.random_brightness(img, (.01, 1.4))
+    # Apply Random Channel Shift
+    else:
+        img = tf.keras.preprocessing.image.random_channel_shift(img, 100)
+
+    return img, label
 
 
 class ARUSequence(tf.keras.utils.Sequence):
@@ -10,7 +65,7 @@ class ARUSequence(tf.keras.utils.Sequence):
 
     Keras Sequence class responsible for loading dataset in a TensorFlow compatible format.
     """
-    def __init__(self, img_path, label_path=None, desired_size=(768, 1152)):
+    def __init__(self, img_path, label_path=None, desired_size=(768, 1152), augmentation_rate=1):
         """
         Set up paths and necessary variables.
 
@@ -20,6 +75,7 @@ class ARUSequence(tf.keras.utils.Sequence):
         """
         self.img_path = img_path
         self.label_path = label_path
+        self.augmentation_rate = augmentation_rate
 
         if not os.path.exists(self.img_path):
             raise Exception('Images do not exist in', self.img_path)
@@ -83,17 +139,22 @@ class ARUSequence(tf.keras.utils.Sequence):
         :param index: The index number of the image/label to be retrieved
         :return: The image as tensor and (possibly) label as tensor
         """
+        index = index // self.augmentation_rate
+
         img = self.tensor_image(os.path.join(self.img_path, self.imgs[index]), pil_format="L")
         img = tf.expand_dims(img, 2)
 
+        # FOR TRAINING
         # If a label_path was given, convert the label to a tensor and return it along with the image tensor
         if self.label_path is not None:
             label = self.tensor_image(os.path.join(self.label_path, self.imgs[index].split('.')[0] + '_gt.jpg'),
                                       pil_format="1")
             label = tf.expand_dims(label, 2)
+            img, label = random_augmentation(img, label)
 
             return img, label
 
+        # FOR INFERENCE
         # If no label was given, return the image tensor and the image name
         return img, self.imgs[index].split('.')[0]
 
@@ -102,4 +163,4 @@ class ARUSequence(tf.keras.utils.Sequence):
         The number of items in the sequence
         :return: Length of the sequence
         """
-        return len(self.imgs)
+        return len(self.imgs) * self.augmentation_rate

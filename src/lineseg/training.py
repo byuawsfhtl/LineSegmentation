@@ -1,62 +1,7 @@
-import random
-
 import tensorflow as tf
 from tqdm import tqdm
 
 from src.lineseg.model import ARUNet
-
-
-def random_augmentation(img, label):
-    """
-    Function to apply random augmentations to the image and label image
-
-    :param img: The image to be transformed
-    :param label: The label to be transformed
-    :return: The transformed image and label
-    """
-    theta = 0
-    tx = 0
-    ty = 0
-    zx = 1
-    zy = 1
-    shear = 0
-
-    img = tf.squeeze(img)
-    label = tf.squeeze(label)
-
-    # Random Flip
-    if random.randint(0, 2) == 0:
-        img = tf.image.flip_left_right(img)
-        label = tf.image.flip_left_right(label)
-    # Random Rotate
-    if random.randint(0, 1):  # .5
-        theta = random.uniform(-5, 5)
-    # Random Shear
-    elif random.randint(0, 1):  # Only do shear if we haven't rotated
-        shear = random.uniform(-5, 5)
-    # Random Zoom
-    if random.randint(0, 2) == 0:
-        zx = random.uniform(0.9, 1.1)
-        zy = random.uniform(0.9, 1.1)
-    # Random Translation
-    if random.randint(0, 1):
-        tx = random.uniform(-35, 35)
-        ty = random.uniform(-35, 35)
-
-    # Apply Affine Transformation
-    img = tf.keras.preprocessing.image.apply_affine_transform(img.numpy(), theta=theta, tx=tx, ty=ty, shear=shear,
-                                                              zx=zx, zy=zy)
-    label = tf.keras.preprocessing.image.apply_affine_transform(label.numpy(), theta=theta, tx=tx, ty=ty, shear=shear,
-                                                                zx=zx, zy=zy)
-
-    # Apply Random Brightness Transformation
-    if random.randint(0, 1):
-        img = tf.keras.preprocessing.image.random_brightness(img, (.01, 1.4))
-    # Apply Random Channel Shift
-    else:
-        img = tf.keras.preprocessing.image.random_channel_shift(img, 100)
-
-    return img, label
 
 
 class ModelTrainer:

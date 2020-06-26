@@ -60,8 +60,8 @@ def train_model(cmd_args):
     args.parse()
 
     # Create a Keras Sequence so that we can access data
-    sequence = ARUSequence(args[TArg.IMG_PATH], args[TArg.LABEL_PATH],
-                           eval(args[TArg.IMG_DIM_AFTER_RESIZE]))
+    sequence = ARUSequence(args[TArg.IMG_PATH], args[TArg.LABEL_PATH], eval(args[TArg.IMG_DIM_AFTER_RESIZE]),
+                           augmentation_rate=int(args[TArg.AUGMENTATION_RATE]))
 
     # Create a tfrecord from the created sequence. This will speed up training dramatically
     create_tfrecord_from_sequence(sequence, args[TArg.TFRECORD_OUT_PATH])
@@ -74,7 +74,6 @@ def train_model(cmd_args):
     # Create a TFRecordDataset using the newly created tfrecord
     dataset = tf.data.TFRecordDataset(args[TArg.TFRECORD_OUT_PATH])\
         .map(read_tfrecord)\
-        .map(random_augmentation)\
         .shuffle(buffer_size=train_dataset_size, reshuffle_each_iteration=True)
     train_dataset = dataset.take(train_dataset_size).batch(int(args[TArg.BATCH_SIZE]))
     val_dataset = dataset.skip(val_dataset_size).batch(int(args[TArg.BATCH_SIZE]))

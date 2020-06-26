@@ -83,7 +83,7 @@ def train_model(cmd_args):
     # Create a TFRecordDataset using the newly created tfrecord
     dataset = tf.data.TFRecordDataset(tfrecord_path)\
         .map(read_tfrecord)\
-        .shuffle(buffer_size=train_dataset_size, reshuffle_each_iteration=True)
+        .shuffle(buffer_size=dataset_size//4, reshuffle_each_iteration=True)
     train_dataset = dataset.take(train_dataset_size).batch(int(args[TArg.BATCH_SIZE]))
     val_dataset = dataset.skip(val_dataset_size).batch(int(args[TArg.BATCH_SIZE]))
 

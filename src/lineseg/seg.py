@@ -26,14 +26,17 @@ def segment_from_predictions(original_image, baseline_prediction, seam_predictio
     :return: None
     """
     original_image = tf.squeeze(original_image).numpy()
-    # baseline_image = tf.squeeze(tf.argmax(baseline_prediction, axis=3)).numpy()
-    baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
+    baseline_image = tf.squeeze(tf.argmax(baseline_prediction, axis=3)).numpy()
+    # baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
     seam_image = tf.squeeze(seam_prediction[:, :, :, 1])
 
-    sharpened_baseline_image = sharpen_image(baseline_image)
+    plot_image(baseline_image, 'Original Baseline')
+    plot_image(sharpen_image(tf.squeeze(baseline_prediction[:, :, :, 1])), 'Sharpened Baseline')
     sharpened_seam_image = sharpen_image(seam_image)
 
-    baselines = cluster(sharpened_baseline_image)
+    plot_image(sharpened_seam_image, 'Sharpened Seam')
+
+    baselines = cluster(baseline_image)
     baselines = sort_lines(baselines, original_image.shape)
 
     # Search the cleaned-up seam image for upper/lower seams

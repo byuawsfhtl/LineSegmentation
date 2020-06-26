@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 from src.lineseg.dataset.sequence import ARUSequence
 from src.lineseg.dataset.tfrecord import create_tfrecord_from_sequence, read_tfrecord
-from src.lineseg.training import ModelTrainer
+from src.lineseg.training import ModelTrainer, random_augmentation
 from src.lineseg.util.arguments import TArg, TrainArgParser
 
 
@@ -74,7 +74,8 @@ def train_model(cmd_args):
     # Create a TFRecordDataset using the newly created tfrecord
     dataset = tf.data.TFRecordDataset(args[TArg.TFRECORD_OUT_PATH])\
         .map(read_tfrecord)\
-        .shuffle(buffer_size=1000, reshuffle_each_iteration=True)
+        .map(random_augmentation)\
+        .shuffle(buffer_size=train_dataset_size, reshuffle_each_iteration=True)
     train_dataset = dataset.take(train_dataset_size).batch(int(args[TArg.BATCH_SIZE]))
     val_dataset = dataset.skip(val_dataset_size).batch(int(args[TArg.BATCH_SIZE]))
 

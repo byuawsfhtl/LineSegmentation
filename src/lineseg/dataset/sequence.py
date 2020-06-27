@@ -126,6 +126,7 @@ class ARUSequence(tf.keras.utils.Sequence):
         img = img.convert(pil_format)
         img = self.resize(img, self.desired_size)
         x = tf.constant(img, dtype=tf.float32)
+        x = tf.image.per_image_standardization(x)  # Adjust image to have mean 0 and variance 1
 
         return x
 

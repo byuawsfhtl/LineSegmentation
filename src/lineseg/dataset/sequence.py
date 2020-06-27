@@ -127,7 +127,6 @@ class LineSequence(tf.keras.utils.Sequence):
         img = self.resize(img, self.desired_size)
         img_tensor = tf.constant(img, dtype=tf.float32)
         img_tensor = tf.expand_dims(img_tensor, 2)
-        img_tensor = tf.image.per_image_standardization(img_tensor)  # Adjust image to have mean 0 and variance 1
 
         return img_tensor
 
@@ -141,6 +140,7 @@ class LineSequence(tf.keras.utils.Sequence):
         img_index = index // self.augmentation_rate
 
         img = self.tensor_image(os.path.join(self.img_path, self.imgs[img_index]), pil_format="L")
+        img = tf.image.per_image_standardization(img)  # Adjust image to have mean 0 and variance 1
 
         # FOR TRAINING
         # If a label_path was given, convert the label to a tensor and return it along with the image tensor

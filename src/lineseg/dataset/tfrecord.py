@@ -1,7 +1,7 @@
 import os
 
 import tensorflow as tf
-
+from tqdm import tqdm
 
 def create_tfrecord_from_sequence(sequence, tfrecord_path):
     """
@@ -17,14 +17,12 @@ def create_tfrecord_from_sequence(sequence, tfrecord_path):
 
     writer = tf.io.TFRecordWriter(tfrecord_path)
 
-    for index, (img, label) in enumerate(sequence):
+    for index, (img, label) in enumerate(tqdm(sequence)):
         feature = {'label': _bytes_feature(tf.io.serialize_tensor(label)),
                    'image': _bytes_feature(tf.io.serialize_tensor(img))}
 
         example = tf.train.Example(features=tf.train.Features(feature=feature))
         writer.write(example.SerializeToString())
-        if index % 1000 == 0:
-            tf.print(str(index) + '/' + str(len(sequence)))
 
     tf.print(str(len(sequence)) + '/' + str(len(sequence)))
     tf.print('Finished: TFRecord created at', tfrecord_path)

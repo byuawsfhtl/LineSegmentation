@@ -107,7 +107,7 @@ def cluster(image, min_points=10):
     """
     # Perform clustering according to the DBSCAN algorithm
     points = tf.where(image).numpy()  # Find the coordinates that are non-zero
-    clustered_points = DBSCAN(eps=30, min_samples=2).fit(points)
+    clustered_points = DBSCAN(eps=15, min_samples=10).fit(points)
 
     # Create a list of lists to hold the clusters based on the labeling
     unique_labels = np.unique(clustered_points.labels_)

@@ -4,7 +4,7 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from src.lineseg.model import ARUNet
-from src.lineseg.dataset.sequence import ARUSequence
+from src.lineseg.dataset.sequence import LineSequence
 from src.lineseg.util.arguments import IArg, InfArgParser
 from src.lineseg.seg import segment_from_predictions
 
@@ -35,7 +35,7 @@ def inference(cmd_args):
     args.parse()
 
     # Create Keras sequence to load data
-    sequence = ARUSequence(args[IArg.IMG_PATH])
+    sequence = LineSequence(args[IArg.IMG_PATH])
 
     # Create our ARU-Net Models
     baseline_model = ARUNet()

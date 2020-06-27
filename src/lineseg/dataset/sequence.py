@@ -56,7 +56,7 @@ def random_augmentation(img, label):
     return img, label
 
 
-class ARUSequence(tf.keras.utils.Sequence):
+class LineSequence(tf.keras.utils.Sequence):
     """
     ARU-Sequence
 
@@ -125,10 +125,11 @@ class ARUSequence(tf.keras.utils.Sequence):
         img = Image.open(path)
         img = img.convert(pil_format)
         img = self.resize(img, self.desired_size)
-        x = tf.constant(img, dtype=tf.float32)
-        x = tf.image.per_image_standardization(x)  # Adjust image to have mean 0 and variance 1
+        img_tensor = tf.constant(img, dtype=tf.float32)
+        img_tensor = tf.expand_dims(img_tensor, 2)
+        img_tensor = tf.image.per_image_standardization(img_tensor)  # Adjust image to have mean 0 and variance 1
 
-        return x
+        return img_tensor
 
     def __getitem__(self, index):
         """
@@ -140,14 +141,12 @@ class ARUSequence(tf.keras.utils.Sequence):
         img_index = index // self.augmentation_rate
 
         img = self.tensor_image(os.path.join(self.img_path, self.imgs[img_index]), pil_format="L")
-        img = tf.expand_dims(img, 2)
 
         # FOR TRAINING
         # If a label_path was given, convert the label to a tensor and return it along with the image tensor
         if self.label_path is not None:
             label = self.tensor_image(os.path.join(self.label_path, self.imgs[img_index].split('.')[0] + '_gt.jpg'),
                                       pil_format="1")
-            label = tf.expand_dims(label, 2)
 
             # Don't perform data augmentation the first time we see this image
             if index % self.augmentation_rate != 0:

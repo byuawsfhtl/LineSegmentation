@@ -3,7 +3,7 @@ import sys
 import tensorflow as tf
 from matplotlib import pyplot as plt
 
-from src.lineseg.dataset.sequence import ARUSequence
+from src.lineseg.dataset.sequence import LineSequence
 from src.lineseg.dataset.tfrecord import create_tfrecord_from_sequence, read_tfrecord
 from src.lineseg.training import ModelTrainer
 from src.lineseg.util.arguments import TArg, TrainArgParser
@@ -64,8 +64,8 @@ def train_model(cmd_args):
     args.parse()
 
     # Create a Keras Sequence so that we can access data
-    sequence = ARUSequence(args[TArg.IMG_PATH], args[TArg.LABEL_PATH], eval(args[TArg.IMG_DIM_AFTER_RESIZE]),
-                           augmentation_rate=int(args[TArg.AUGMENTATION_RATE]))
+    sequence = LineSequence(args[TArg.IMG_PATH], args[TArg.LABEL_PATH], eval(args[TArg.IMG_DIM_AFTER_RESIZE]),
+                            augmentation_rate=int(args[TArg.AUGMENTATION_RATE]))
 
     # Create a tfrecord from the created sequence. This will speed up training dramatically
     if args[TArg.TFRECORD_IN_PATH] is None:

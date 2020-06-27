@@ -27,18 +27,18 @@ def random_augmentation(img, label):
         label = tf.image.flip_left_right(label)
     # Random Rotate
     if random.randint(0, 1):  # .5
-        theta = random.uniform(-2, 2)
+        theta = random.uniform(-5, 5)
     # Random Shear
     elif random.randint(0, 1):  # Only do shear if we haven't rotated
-        shear = random.uniform(-2, 2)
+        shear = random.uniform(-5, 5)
     # Random Zoom
     if random.randint(0, 2) == 0:
         zx = random.uniform(0.9, 1.1)
         zy = random.uniform(0.9, 1.1)
     # Random Translation
     if random.randint(0, 1):
-        tx = random.uniform(-10, 10)
-        ty = random.uniform(-10, 10)
+        tx = random.uniform(-35, 35)
+        ty = random.uniform(-35, 35)
 
     # Apply Affine Transformation
     img = tf.keras.preprocessing.image.apply_affine_transform(img.numpy(), theta=theta, tx=tx, ty=ty, shear=shear,
@@ -47,11 +47,11 @@ def random_augmentation(img, label):
                                                                 zx=zx, zy=zy)
 
     # Apply Random Brightness Transformation
-    # if random.randint(0, 1):
-    #     img = tf.keras.preprocessing.image.random_brightness(img, (.01, 1.4))
+    if random.randint(0, 1):
+        img = tf.keras.preprocessing.image.random_brightness(img, (.01, 1.4))
     # Apply Random Channel Shift
-    # else:
-    #     img = tf.keras.preprocessing.image.random_channel_shift(img, 100)
+    else:
+        img = tf.keras.preprocessing.image.random_channel_shift(img, 100)
 
     return img, label
 

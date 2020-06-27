@@ -47,8 +47,8 @@ def inference(cmd_args):
 
     # Iterate through each of the images and perform inference
     for img, img_name in tqdm(sequence):
-        baseline_prediction = baseline_model(tf.expand_dims(img, 0))
-        seam_prediction = seam_model(tf.expand_dims(img, 0))
+        baseline_prediction = baseline_model(tf.expand_dims(img, 0), training=False)
+        seam_prediction = seam_model(tf.expand_dims(img, 0), training=False)
 
         segment_from_predictions(img, baseline_prediction, seam_prediction, img_name,
                                  int(args[IArg.SEGMENTATION_STEP_SIZE]),

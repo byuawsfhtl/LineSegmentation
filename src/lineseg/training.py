@@ -68,7 +68,7 @@ class ModelTrainer:
         :return: None
         """
         with tf.GradientTape() as tape:
-            predictions = self.model(images)
+            predictions = self.model(images, training=True)
             loss = self.objective(labels, predictions)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
@@ -85,7 +85,7 @@ class ModelTrainer:
         :param labels: mini-batch of labels in tensor format
         :return: None
         """
-        predictions = self.model(images)
+        predictions = self.model(images, training=False)
         loss = self.objective(labels, predictions)
 
         self.val_loss(loss)

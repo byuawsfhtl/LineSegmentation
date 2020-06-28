@@ -96,17 +96,17 @@ class ResidualBlock(Model):
 
         # Conv1
         out = self.conv1(x)
-        out = self.bn1(out)
+        # out = self.bn1(out)
         out = self.act1(out)
 
         # Conv2
         out = self.conv2(out)
-        out = self.bn2(out)
+        # out = self.bn2(out)
         out = self.act2(out)
 
         # Conv3
         out = self.conv3(out)
-        out = self.bn3(out)
+        # out = self.bn3(out)
         out = self.act3(out)
 
         # Conv4 - Logits

@@ -11,3 +11,6 @@ dependencies:
 - conda-forge::tqdm=4.38
 - conda-forge::matplotlib=3.2.1
 - conda-forge::shapely=1.7.0
+- anaconda::pip=20.1.1
+- pip:
+  - tensorflow-addons==0.10.0

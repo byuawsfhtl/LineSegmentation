@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow_addons as tfa
 from tqdm import tqdm
 
 from src.lineseg.model import ARUNet
@@ -43,7 +44,8 @@ class ModelTrainer:
         if weights_path is not None:
             self.model.load_weights(weights_path)
 
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr, clipvalue=100)
+        adam = tf.keras.optimizers.RMSprop(learning_rate=lr, decay=0.985)
+        self.optimizer = tfa.optimizers.MovingAverage(adam, average_decay=0.9995)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
 
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')
@@ -69,11 +71,13 @@ class ModelTrainer:
         """
         with tf.GradientTape() as tape:
             predictions = self.model(images, training=True)
-            loss = self.objective(labels, predictions)
+            regularization_loss = tf.math.add_n(self.model.losses)
+            prediction_loss = self.objective(labels, predictions)
+            total_loss = prediction_loss + regularization_loss
 
-        gradients = tape.gradient(loss, self.model.trainable_variables)
+        gradients = tape.gradient(total_loss, self.model.trainable_variables,)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
-        self.train_loss(loss)
+        self.train_loss(total_loss)
         self.train_iou(labels, tf.argmax(predictions, axis=3))
 
     @tf.function

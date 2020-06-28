@@ -3,6 +3,7 @@ import os
 import tensorflow as tf
 from tqdm import tqdm
 
+
 def create_tfrecord_from_sequence(sequence, tfrecord_path):
     """
     Create a TfRecord dataset from a sequence

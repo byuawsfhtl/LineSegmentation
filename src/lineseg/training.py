@@ -88,9 +88,11 @@ class ModelTrainer:
         :return: None
         """
         predictions = self.model(images, training=False)
-        loss = self.objective(labels, predictions)
+        regularization_loss = tf.add_n(self.model.losses)
+        pred_loss = self.objective(labels, predictions)
+        total_loss = regularization_loss + pred_loss
 
-        self.val_loss(loss)
+        self.val_loss(total_loss)
         self.val_iou(labels, tf.argmax(predictions, axis=3))
 
     def __call__(self):

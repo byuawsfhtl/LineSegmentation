@@ -140,7 +140,7 @@ class LineSequence(tf.keras.utils.Sequence):
         img_index = index // self.augmentation_rate
 
         img = self.tensor_image(os.path.join(self.img_path, self.imgs[img_index]), pil_format="L")
-        # img = tf.image.per_image_standardization(img)  # Adjust image to have mean 0 and variance 1
+        img = tf.image.per_image_standardization(img)  # Adjust image to have mean 0 and variance 1
 
         # FOR TRAINING
         # If a label_path was given, convert the label to a tensor and return it along with the image tensor

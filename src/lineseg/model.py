@@ -1,36 +1,29 @@
 import tensorflow as tf
 import tensorflow.keras.layers as kl
 from tensorflow.keras import Model
-from tensorflow.keras.regularizers import l2
 
 
-L2COEF = 0.0005
-
-
-class ConvBnActDropMp(Model):
+class ConvBlock(Model):
     """
-    ConvBnActDropMp - Current/Old implementation
+    ConvBlock
 
-    Layer that includes convolution, batch_norm, activation, dropout, max_pool.
+    Layer that includes convolution, batch_norm, activation, max_pool.
     It is used repeatedly in the A-Net and is useful to define here.
     """
-    def __init__(self, filters, activation=kl.ReLU, dropout_rate=None, max_pool=True, name="ConvBnActDropMp"):
+    def __init__(self, filters, activation=kl.ReLU, max_pool=True, name="ConvBnActMp"):
         """
         Define the model in terms of Keras Layers.
 
         :param filters:  The number of filters to be used for the convolution
         :param activation: The activation type
-        :param dropout_rate: The rate of dropout. If set to None, dropout will not be used
         :param max_pool: Whether or not a max pooling layer will be added at the end
         """
-        super(ConvBnActDropMp, self).__init__(name=name)
+        super(ConvBlock, self).__init__(name=name)
 
         self.model = tf.keras.Sequential(name=name)
-        self.model.add(kl.Conv2D(filters, kernel_size=(4, 4), padding='same', kernel_regularizer=l2(L2COEF)))
+        self.model.add(kl.Conv2D(filters, kernel_size=(4, 4), padding='same'))
+        self.model.add(kl.BatchNormalization(renorm=True))
         self.model.add(activation())
-
-        if dropout_rate is not None:
-            self.model.add(kl.Dropout(dropout_rate))
 
         if max_pool:
             self.model.add(kl.MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding='same'))
@@ -66,21 +59,21 @@ class ResidualBlock(Model):
         self.filters = filters
         self.act_final = activation()
 
-        self.shortcut = kl.Conv2D(filters, kernel_size=(1, 1), use_bias=False, kernel_regularizer=l2(L2COEF))
+        self.shortcut = kl.Conv2D(filters, kernel_size=(1, 1), use_bias=False)
 
-        self.conv1 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2COEF))
-        # self.bn1 = kl.BatchNormalization(renorm=True)
+        self.conv1 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same')
+        self.bn1 = kl.BatchNormalization(renorm=True)
         self.act1 = activation()
 
-        self.conv2 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2COEF))
-        # self.bn2 = kl.BatchNormalization(renorm=True)
+        self.conv2 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same')
+        self.bn2 = kl.BatchNormalization(renorm=True)
         self.act2 = activation()
 
-        self.conv3 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2COEF))
-        # self.bn3 = kl.BatchNormalization(renorm=True)
+        self.conv3 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same')
+        self.bn3 = kl.BatchNormalization(renorm=True)
         self.act3 = activation()
 
-        self.conv4 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2COEF))
+        self.conv4 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same')
 
     def call(self, x, **kwargs):
         """
@@ -96,17 +89,17 @@ class ResidualBlock(Model):
 
         # Conv1
         out = self.conv1(x)
-        # out = self.bn1(out)
+        out = self.bn1(out)
         out = self.act1(out)
 
         # Conv2
         out = self.conv2(out)
-        # out = self.bn2(out)
+        out = self.bn2(out)
         out = self.act2(out)
 
         # Conv3
         out = self.conv3(out)
-        # out = self.bn3(out)
+        out = self.bn3(out)
         out = self.act3(out)
 
         # Conv4 - Logits
@@ -129,19 +122,18 @@ class ANet(Model):
     it deems important. It contains a series of convolution, batch_norm, dropout, and max pooling layers
     followed by a sigmoid activation.
     """
-    def __init__(self, activation=kl.ReLU, dropout_rate=0.5):
+    def __init__(self, activation=kl.ReLU):
         """
         Define the model in terms of Keras layers.
 
         :param activation: The activation type used
-        :param dropout_rate: The rate of dropout. If None, dropout will not be used.
         """
         super(ANet, self).__init__(name='A-Net')
 
-        self.conv1 = ConvBnActDropMp(12, activation=activation, dropout_rate=dropout_rate, max_pool=True)
-        self.conv2 = ConvBnActDropMp(16, activation=activation, dropout_rate=dropout_rate, max_pool=True)
-        self.conv3 = ConvBnActDropMp(32, activation=activation, dropout_rate=dropout_rate, max_pool=True)
-        self.conv4 = ConvBnActDropMp(2, activation=activation, dropout_rate=dropout_rate, max_pool=False)
+        self.conv1 = ConvBlock(12, activation=activation, max_pool=True)
+        self.conv2 = ConvBlock(16, activation=activation, max_pool=True)
+        self.conv3 = ConvBlock(32, activation=activation, max_pool=True)
+        self.conv4 = ConvBlock(2, activation=activation, max_pool=False)
         self.softmax = kl.Softmax(axis=3)
 
     def call(self, x, **kwargs):
@@ -193,14 +185,11 @@ class RUNet(Model):
         self.mp2 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
         self.mp3 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
 
-        self.deconv1 = kl.Conv2DTranspose(initial_filters * 4, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(L2COEF))
+        self.deconv1 = kl.Conv2DTranspose(initial_filters * 4, kernel_size=(2, 2), strides=(2, 2), padding='same')
         self.act1 = activation()
-        self.deconv2 = kl.Conv2DTranspose(initial_filters * 2, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(L2COEF))
+        self.deconv2 = kl.Conv2DTranspose(initial_filters * 2, kernel_size=(2, 2), strides=(2, 2), padding='same')
         self.act2 = activation()
-        self.deconv3 = kl.Conv2DTranspose(initial_filters, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(L2COEF))
+        self.deconv3 = kl.Conv2DTranspose(initial_filters, kernel_size=(2, 2), strides=(2, 2), padding='same')
         self.act3 = activation()
 
     def call(self, x, **kwargs):
@@ -261,29 +250,25 @@ class ARUNet(Model):
 
         # Scale 2
         self.mp1 = kl.MaxPooling2D(pool_size=(2, 2))
-        self.deconv1 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(L2COEF))
+        self.deconv1 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(2, 2), padding='same')
         self.anet2 = ANet()
         self.runet2 = RUNet()
 
         # Scale 3
         self.mp2 = kl.MaxPooling2D(pool_size=(2, 2))
-        self.deconv2 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(4, 4), padding='same',
-                                          kernel_regularizer=l2(L2COEF))
+        self.deconv2 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(4, 4), padding='same')
         self.anet3 = ANet()
         self.runet3 = RUNet()
 
         # Scale 4
         self.mp3 = kl.MaxPooling2D(pool_size=(2, 2))
-        self.deconv3 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(8, 8), padding='same',
-                                          kernel_regularizer=l2(L2COEF))
+        self.deconv3 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(8, 8), padding='same')
         self.anet4 = ANet()
         self.runet4 = RUNet()
 
         # Scale 5
         self.mp4 = kl.MaxPooling2D(pool_size=(2, 2))
-        self.deconv4 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(16, 16), padding='same',
-                                          kernel_regularizer=l2(L2COEF))
+        self.deconv4 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(16, 16), padding='same')
         self.anet5 = ANet()
         self.runet5 = RUNet()
 

@@ -71,13 +71,11 @@ class ModelTrainer:
         """
         with tf.GradientTape() as tape:
             predictions = self.model(images, training=True)
-            regularization_loss = tf.math.add_n(self.model.losses)
-            prediction_loss = self.objective(labels, predictions)
-            total_loss = prediction_loss + regularization_loss
+            loss = self.objective(labels, predictions)
 
-        gradients = tape.gradient(total_loss, self.model.trainable_variables,)
+        gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
-        self.train_loss(total_loss)
+        self.train_loss(loss)
         self.train_iou(labels, tf.argmax(predictions, axis=3))
 
     @tf.function

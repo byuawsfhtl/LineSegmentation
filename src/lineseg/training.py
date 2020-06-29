@@ -44,8 +44,7 @@ class ModelTrainer:
         if weights_path is not None:
             self.model.load_weights(weights_path)
 
-        adam = tf.keras.optimizers.RMSprop(learning_rate=lr, decay=0.985)
-        self.optimizer = tfa.optimizers.MovingAverage(adam, average_decay=0.9995)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
 
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')

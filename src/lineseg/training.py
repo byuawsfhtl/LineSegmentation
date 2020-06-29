@@ -43,7 +43,7 @@ class ModelTrainer:
         if weights_path is not None:
             self.model.load_weights(weights_path)
 
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+        self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
 
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')
@@ -69,13 +69,11 @@ class ModelTrainer:
         """
         with tf.GradientTape() as tape:
             predictions = self.model(images, training=True)
-            # regularization_loss = tf.add_n(self.model.losses)
-            pred_loss = self.objective(labels, predictions)
-            total_loss = pred_loss
+            loss = self.objective(labels, predictions)
 
-        gradients = tape.gradient(total_loss, self.model.trainable_variables)
+        gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
-        self.train_loss(total_loss)
+        self.train_loss(loss)
         self.train_iou(labels, tf.argmax(predictions, axis=3))
 
     @tf.function
@@ -88,11 +86,9 @@ class ModelTrainer:
         :return: None
         """
         predictions = self.model(images, training=False)
-        # regularization_loss = tf.add_n(self.model.losses)
-        pred_loss = self.objective(labels, predictions)
-        total_loss = pred_loss
+        loss = self.objective(labels, predictions)
 
-        self.val_loss(total_loss)
+        self.val_loss(loss)
         self.val_iou(labels, tf.argmax(predictions, axis=3))
 
     def __call__(self):

@@ -1,60 +1,29 @@
 import tensorflow as tf
 import tensorflow.keras.layers as kl
 from tensorflow.keras import Model
-from tensorflow.keras.regularizers import l2
 
 
 class ConvBlock(Model):
-    """
-    ConvBlock
-
-    Layer that includes convolution, batch_norm, activation, max_pool.
-    It is used repeatedly in the A-Net and is useful to define here.
-    """
-    def __init__(self, filters, activation=kl.ReLU, max_pool=True, l2c=0.0005, name="ConvBlock"):
-        """
-        Define the model in terms of Keras Layers.
-
-        :param filters:  The number of filters to be used for the convolution
-        :param activation: The activation type
-        :param max_pool: Whether or not a max pooling layer will be added at the end
-        """
-        super(ConvBlock, self).__init__(name=name)
+    def __init__(self, filters, activation=kl.PReLU, dropout_rate=0.0, max_pool=True, name="ConvBlock"):
+        super(ConvBlock, self).__init__()
 
         self.model = tf.keras.Sequential(name=name)
-        self.model.add(kl.Conv2D(filters, kernel_size=(4, 4), padding='same', kernel_regularizer=l2(l2c)))
-        # self.model.add(kl.BatchNormalization(renorm=True))
+        self.model.add(kl.Conv2D(filters, kernel_size=(4, 4), padding='same'))
+        self.model.add(kl.BatchNormalization(renorm=True))
         self.model.add(activation())
+
+        if dropout_rate != 0.0:
+            self.model.add(kl.Dropout(dropout_rate))
 
         if max_pool:
             self.model.add(kl.MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding='same'))
 
     def call(self, x, **kwargs):
-        """
-        Forward pass of the ConvBnActDropMp
-
-        :param x: The input to the layer as tensor
-        :param kwargs: Additional parameters such as training
-        :return: The output of the layer as tensor
-        """
         return self.model(x, **kwargs)
 
 
 class ResidualBlock(Model):
-    """
-    Residual Block
-
-    Layer that contains a series of convolution, batch_norm, and activation. A skip connection is
-    added as a shortcut between the input and the output.
-    """
-
-    def __init__(self, filters, activation=kl.ReLU, l2c=0.0005):
-        """
-        Define the model in terms of Keras Layers.
-
-        :param filters:
-        :param activation:
-        """
+    def __init__(self, filters, activation=kl.PReLU):
         super(ResidualBlock, self).__init__()
 
         self.filters = filters
@@ -62,45 +31,38 @@ class ResidualBlock(Model):
 
         self.shortcut = kl.Conv2D(filters, kernel_size=(1, 1), use_bias=False)
 
-        self.conv1 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(l2c))
-        # self.bn1 = kl.BatchNormalization(renorm=True)
+        self.conv1 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same')
+        self.bn1 = kl.BatchNormalization(renorm=True)
         self.act1 = activation()
 
-        self.conv2 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(l2c))
-        # self.bn2 = kl.BatchNormalization(renorm=True)
+        self.conv2 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same')
+        self.bn2 = kl.BatchNormalization(renorm=True)
         self.act2 = activation()
 
-        self.conv3 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(l2c))
-        # self.bn3 = kl.BatchNormalization(renorm=True)
+        self.conv3 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same')
+        self.bn3 = kl.BatchNormalization(renorm=True)
         self.act3 = activation()
 
-        self.conv4 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(l2c))
+        self.conv4 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same')
 
     def call(self, x, **kwargs):
-        """
-        Forward pass of the Residual Block
-
-        :param x: Input to the layer as tensor
-        :param kwargs:
-        :return: Output to the layer as tensor
-        """
         # Add shortcut if necessary
         if x.shape[-1] != self.filters:  # Channel Dimension
             x = self.shortcut(x)
 
         # Conv1
         out = self.conv1(x)
-        # out = self.bn1(out)
+        out = self.bn1(out)
         out = self.act1(out)
 
         # Conv2
         out = self.conv2(out)
-        # out = self.bn2(out)
+        out = self.bn2(out)
         out = self.act2(out)
 
         # Conv3
         out = self.conv3(out)
-        # out = self.bn3(out)
+        out = self.bn3(out)
         out = self.act3(out)
 
         # Conv4 - Logits
@@ -116,95 +78,51 @@ class ResidualBlock(Model):
 
 
 class ANet(Model):
-    """
-    ANet
-
-    The A-Net acts as an attention layer to allow the ARU-Net to focus on specific parts of the image that
-    it deems important. It contains a series of convolution, batch_norm, dropout, and max pooling layers
-    followed by a sigmoid activation.
-    """
-    def __init__(self, activation=kl.ReLU, l2c=0.0005):
-        """
-        Define the model in terms of Keras layers.
-
-        :param activation: The activation type used
-        """
+    def __init__(self, activation=kl.PReLU, dropout_rate=0.2):
         super(ANet, self).__init__(name='A-Net')
 
-        self.conv1 = ConvBlock(12, activation=activation, max_pool=True, l2c=l2c)
-        self.conv2 = ConvBlock(16, activation=activation, max_pool=True, l2c=l2c)
-        self.conv3 = ConvBlock(32, activation=activation, max_pool=True, l2c=l2c)
-        self.conv4 = ConvBlock(2, activation=activation, max_pool=False, l2c=l2c)
-        # self.softmax = kl.Softmax(axis=1)
+        self.conv1 = ConvBlock(12, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv1')
+        self.conv2 = ConvBlock(16, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv2')
+        self.conv3 = ConvBlock(32, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv3')
+        self.conv4 = ConvBlock(2, activation=activation, dropout_rate=dropout_rate, max_pool=False, name='conv4')
 
     def call(self, x, **kwargs):
-        """
-        The forward pass of the A-Net
+        out = self.conv1(x)
+        out = self.conv2(out)
+        out = self.conv3(out)
+        out = self.conv4(out)
 
-        :param x: The input to the layer as tensor
-        :param kwargs: Additional parameters
-        :return: The output of the layer as tensor
-        """
-        out = self.conv1(x, **kwargs)
-        out = self.conv2(out, **kwargs)
-        out = self.conv3(out, **kwargs)
-        out = self.conv4(out, **kwargs)
-
-        # out = self.softmax(out)  # Pixel-wise softmax
         out = tf.keras.activations.sigmoid(out)
 
         return out
 
 
 class RUNet(Model):
-    """
-    RUNet
-
-    The RU-Net is essentially a U-Net with it's convolutional layers replaced with Residual Blocks
-    as defined above.
-    """
-    def __init__(self, initial_filters=8, activation=kl.ReLU, l2c=0.0005):
-        """
-        Define the layer in terms of Keras Layers.
-
-        :param initial_filters: The number of initial filters. The number of filters will increase as the image is
-                                convolved through the RU-Net
-        :param activation: The type of activation used
-        """
+    def __init__(self, initial_filters=8, activation=kl.PReLU):
         super(RUNet, self).__init__(name='RU-Net')
 
-        self.block1 = ResidualBlock(filters=initial_filters, activation=activation, l2c=l2c)
-        self.block2 = ResidualBlock(filters=initial_filters * 2, activation=activation, l2c=l2c)
-        self.block3 = ResidualBlock(filters=initial_filters * 4, activation=activation, l2c=l2c)
-        self.block4 = ResidualBlock(filters=initial_filters * 8, activation=activation, l2c=l2c)
-        self.block5 = ResidualBlock(filters=initial_filters * 4, activation=activation, l2c=l2c)
-        self.block6 = ResidualBlock(filters=initial_filters * 2, activation=activation, l2c=l2c)
-        self.block7 = ResidualBlock(filters=initial_filters, activation=activation, l2c=l2c)
+        self.block1 = ResidualBlock(filters=initial_filters, activation=activation)
+        self.block2 = ResidualBlock(filters=initial_filters * 2, activation=activation)
+        self.block3 = ResidualBlock(filters=initial_filters * 4, activation=activation)
+        self.block4 = ResidualBlock(filters=initial_filters * 8, activation=activation)
+        self.block5 = ResidualBlock(filters=initial_filters * 4, activation=activation)
+        self.block6 = ResidualBlock(filters=initial_filters * 2, activation=activation)
+        self.block7 = ResidualBlock(filters=initial_filters, activation=activation)
 
-        self.conv_final = kl.Conv2D(filters=2, kernel_size=(1, 1), padding='same', kernel_regularizer=l2(l2c))
+        self.conv_final = kl.Conv2D(filters=2, kernel_size=(1, 1), padding='same')
 
         self.mp1 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
         self.mp2 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
         self.mp3 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
 
-        self.deconv1 = kl.Conv2DTranspose(initial_filters * 4, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(l2c))
+        self.deconv1 = kl.Conv2DTranspose(initial_filters * 4, kernel_size=(2, 2), strides=(2, 2), padding='same')
         self.act1 = activation()
-        self.deconv2 = kl.Conv2DTranspose(initial_filters * 2, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(l2c))
+        self.deconv2 = kl.Conv2DTranspose(initial_filters * 2, kernel_size=(2, 2), strides=(2, 2), padding='same')
         self.act2 = activation()
-        self.deconv3 = kl.Conv2DTranspose(initial_filters, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(l2c))
+        self.deconv3 = kl.Conv2DTranspose(initial_filters, kernel_size=(2, 2), strides=(2, 2), padding='same')
         self.act3 = activation()
 
     def call(self, x, **kwargs):
-        """
-        The forward pass of the RU-Net
-
-        :param x: The input to the layer as tensor
-        :param kwargs: Additional parameters
-        :return: The output of the layer as tensor
-        """
         # Down
         block1_out = self.block1(x, **kwargs)
         block2_in = self.mp1(block1_out)
@@ -231,66 +149,47 @@ class RUNet(Model):
         block7_in = self.act3(block7_in)
         block7_out = self.block7(tf.concat((block7_in, block1_out), axis=3), **kwargs)
 
-        # Final Conv to get down to 2 channels
+        # Final Conv to get down to 1 channel
         final_out = self.conv_final(block7_out)
 
         return final_out
 
 
 class ARUNet(Model):
-    """
-    ARUNet
-
-    The combination of the A-Net and RU-Net at 5 separate scale spaces.
-    """
-    def __init__(self, l2c=0.0005):
-        """
-        Define the layer in terms of Keras Layers
-        """
+    def __init__(self):
         super(ARUNet, self).__init__()
 
         # Scale 1 (Normal Size)
-        self.anet1 = ANet(l2c=l2c)
-        self.runet1 = RUNet(l2c=l2c)
+        self.anet1 = ANet()
+        self.runet1 = RUNet()
 
         # Scale 2
         self.mp1 = kl.MaxPooling2D(pool_size=(2, 2))
-        self.deconv1 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(l2c))
-        self.anet2 = ANet(l2c=l2c)
-        self.runet2 = RUNet(l2c=l2c)
+        self.deconv1 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(2, 2), padding='same')
+        self.anet2 = ANet()
+        self.runet2 = RUNet()
 
         # Scale 3
         self.mp2 = kl.MaxPooling2D(pool_size=(2, 2))
-        self.deconv2 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(4, 4), padding='same',
-                                          kernel_regularizer=l2(l2c))
-        self.anet3 = ANet(l2c=l2c)
-        self.runet3 = RUNet(l2c=l2c)
+        self.deconv2 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(4, 4), padding='same')
+        self.anet3 = ANet()
+        self.runet3 = RUNet()
 
         # Scale 4
         self.mp3 = kl.MaxPooling2D(pool_size=(2, 2))
-        self.deconv3 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(8, 8), padding='same',
-                                          kernel_regularizer=l2(l2c))
-        self.anet4 = ANet(l2c=l2c)
-        self.runet4 = RUNet(l2c=l2c)
+        self.deconv3 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(8, 8), padding='same')
+        self.anet4 = ANet()
+        self.runet4 = RUNet()
 
         # Scale 5
         self.mp4 = kl.MaxPooling2D(pool_size=(2, 2))
-        self.deconv4 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(16, 16), padding='same',
-                                          kernel_regularizer=l2(l2c))
-        self.anet5 = ANet(l2c=l2c)
-        self.runet5 = RUNet(l2c=l2c)
+        self.deconv4 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(16, 16), padding='same')
+        self.anet5 = ANet()
+        self.runet5 = RUNet()
 
         self.softmax = kl.Softmax(axis=3)
 
     def call(self, x, **kwargs):
-        """
-        The forward pass of the ARU-Net
-
-        :param x: The input to the layer as tensor
-        :param kwargs: Additional parameters
-        :return: The output of the layer as tensor
-        """
         # Scale 1
         anet1_out = self.anet1(x, **kwargs)
         runet1_out = self.runet1(x, **kwargs)
@@ -327,7 +226,7 @@ class ARUNet(Model):
         # Element-Wise Summation
         arunet_out = arunet1_out + arunet2_out + arunet3_out + arunet4_out + arunet5_out
 
-        # Use Softmax to get probability distribution
+        # Use sigmoid to give confidence level
         arunet_out = self.softmax(arunet_out)
 
         return arunet_out

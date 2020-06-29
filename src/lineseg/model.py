@@ -10,7 +10,7 @@ class ConvBlock(Model):
     Layer that includes convolution, batch_norm, activation, max_pool.
     It is used repeatedly in the A-Net and is useful to define here.
     """
-    def __init__(self, filters, activation=kl.ReLU, max_pool=True, name="ConvBnActMp"):
+    def __init__(self, filters, activation=kl.ReLU, max_pool=True, name="ConvBlock"):
         """
         Define the model in terms of Keras Layers.
 
@@ -134,7 +134,7 @@ class ANet(Model):
         self.conv2 = ConvBlock(16, activation=activation, max_pool=True)
         self.conv3 = ConvBlock(32, activation=activation, max_pool=True)
         self.conv4 = ConvBlock(2, activation=activation, max_pool=False)
-        self.softmax = kl.Softmax(axis=3)
+        self.softmax = kl.Softmax(axis=1)
 
     def call(self, x, **kwargs):
         """
@@ -149,7 +149,7 @@ class ANet(Model):
         out = self.conv3(out, **kwargs)
         out = self.conv4(out, **kwargs)
 
-        out = self.softmax(out)
+        out = self.softmax(out)  # Pixel-wise softmax
 
         return out
 
@@ -226,7 +226,7 @@ class RUNet(Model):
         block7_in = self.act3(block7_in)
         block7_out = self.block7(tf.concat((block7_in, block1_out), axis=3), **kwargs)
 
-        # Final Conv to get down to 1 channel
+        # Final Conv to get down to 2 channels
         final_out = self.conv_final(block7_out)
 
         return final_out

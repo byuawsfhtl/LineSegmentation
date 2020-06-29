@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow_addons as tfa
 from tqdm import tqdm
 
 from src.lineseg.model import ARUNet
@@ -70,11 +69,13 @@ class ModelTrainer:
         """
         with tf.GradientTape() as tape:
             predictions = self.model(images, training=True)
-            loss = self.objective(labels, predictions)
+            regularization_loss = tf.add_n(self.model.losses)
+            pred_loss = self.objective(labels, predictions)
+            total_loss = regularization_loss + pred_loss
 
-        gradients = tape.gradient(loss, self.model.trainable_variables)
+        gradients = tape.gradient(total_loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
-        self.train_loss(loss)
+        self.train_loss(total_loss)
         self.train_iou(labels, tf.argmax(predictions, axis=3))
 
     @tf.function

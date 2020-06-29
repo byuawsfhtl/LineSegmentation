@@ -69,9 +69,9 @@ class ModelTrainer:
         """
         with tf.GradientTape() as tape:
             predictions = self.model(images, training=True)
-            regularization_loss = tf.add_n(self.model.losses)
+            # regularization_loss = tf.add_n(self.model.losses)
             pred_loss = self.objective(labels, predictions)
-            total_loss = regularization_loss + pred_loss
+            total_loss = pred_loss
 
         gradients = tape.gradient(total_loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
@@ -88,9 +88,9 @@ class ModelTrainer:
         :return: None
         """
         predictions = self.model(images, training=False)
-        regularization_loss = tf.add_n(self.model.losses)
+        # regularization_loss = tf.add_n(self.model.losses)
         pred_loss = self.objective(labels, predictions)
-        total_loss = regularization_loss + pred_loss
+        total_loss = pred_loss
 
         self.val_loss(total_loss)
         self.val_iou(labels, tf.argmax(predictions, axis=3))

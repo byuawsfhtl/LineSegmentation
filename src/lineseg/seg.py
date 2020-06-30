@@ -96,7 +96,7 @@ def sharpen_image(image_prediction, thresh_start=.1, thresh_end=.9, filter_sizes
     return clean_seam_image
 
 
-def cluster(image, min_points=10):
+def cluster(image, min_points=100):
     """
     Cluster the points on the image using the DBSCAN clustering algorithm. Perform some form of skeletonization.
 
@@ -107,7 +107,7 @@ def cluster(image, min_points=10):
     """
     # Perform clustering according to the DBSCAN algorithm
     points = tf.where(image).numpy()  # Find the coordinates that are non-zero
-    clustered_points = DBSCAN(eps=15, min_samples=10).fit(points)
+    clustered_points = DBSCAN(eps=10, min_samples=5).fit(points)
 
     # Create a list of lists to hold the clusters based on the labeling
     unique_labels = np.unique(clustered_points.labels_)
@@ -268,7 +268,7 @@ def plot_image(img, title=None, figsize=(20, 20)):
     plt.show()
 
 
-def segment_from_polygon(polygon: Polygon, original_image, baseline, cushion=20):
+def segment_from_polygon(polygon: Polygon, original_image, baseline, cushion=0):
     """
     Given a Shapely Polygon, segment the image and return the new image segment
     with its new corresponding baseline.

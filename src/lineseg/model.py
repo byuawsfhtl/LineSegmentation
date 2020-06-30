@@ -78,7 +78,7 @@ class ResidualBlock(Model):
 
 
 class ANet(Model):
-    def __init__(self, activation=kl.PReLU, dropout_rate=0.2):
+    def __init__(self, activation=kl.PReLU, dropout_rate=0.5):
         super(ANet, self).__init__(name='A-Net')
 
         self.conv1 = ConvBlock(12, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv1')
@@ -88,9 +88,9 @@ class ANet(Model):
 
     def call(self, x, **kwargs):
         out = self.conv1(x)
-        out = self.conv2(out)
-        out = self.conv3(out)
-        out = self.conv4(out)
+        out = self.conv2(out, **kwargs)
+        out = self.conv3(out, **kwargs)
+        out = self.conv4(out, **kwargs)
 
         out = tf.keras.activations.sigmoid(out)
 

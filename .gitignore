@@ -31,3 +31,4 @@ data/
 *idea/
 *.sh
 slurm*
+*.out

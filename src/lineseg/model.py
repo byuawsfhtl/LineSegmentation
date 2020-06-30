@@ -98,7 +98,7 @@ class ANet(Model):
 
 
 class RUNet(Model):
-    def __init__(self, initial_filters=8, activation=L.ReLU):
+    def __init__(self, initial_filters=8, activation=kl.ReLU):
         super(RUNet, self).__init__(name='RU-Net')
 
         self.block1 = ResidualBlock(filters=initial_filters, activation=activation)

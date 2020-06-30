@@ -111,7 +111,7 @@ class TrainArgParser(ArgParser):
 
         :return: dictionary with configuration settings
         """
-        self.arg_dict[TArg.IMG_DIM_AFTER_RESIZE.value] = '(768, 1152)'
+        self.arg_dict[TArg.IMG_DIM_AFTER_RESIZE.value] = '(1024, 1536)'
         self.arg_dict[TArg.EPOCHS.value] = '100'
         self.arg_dict[TArg.BATCH_SIZE.value] = '1'
         self.arg_dict[TArg.LEARNING_RATE.value] = '1e-3'
@@ -142,7 +142,7 @@ class InfArgParser(ArgParser):
         # Set Default Arguments
         self.arg_dict[IArg.SHOULD_PLOT_IMAGES.value] = 'False'
         self.arg_dict[IArg.SEGMENTATION_STEP_SIZE.value] = '1'
-        self.arg_dict[IArg.IMAGE_DIM_AFTER_RESIZE.value] = "(768, 1152)"
+        self.arg_dict[IArg.IMAGE_DIM_AFTER_RESIZE.value] = "(1024, 1536)"
 
         # Add Arguments to arg_dict and ensure required args are present
         self.add_arguments()

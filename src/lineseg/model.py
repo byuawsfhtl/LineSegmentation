@@ -4,7 +4,7 @@ from tensorflow.keras import Model
 
 
 class ConvBlock(Model):
-    def __init__(self, filters, activation=kl.PReLU, dropout_rate=0.0, max_pool=True, name="ConvBlock"):
+    def __init__(self, filters, activation=kl.ReLU, dropout_rate=0.0, max_pool=True, name="ConvBlock"):
         super(ConvBlock, self).__init__()
 
         self.model = tf.keras.Sequential(name=name)
@@ -23,7 +23,7 @@ class ConvBlock(Model):
 
 
 class ResidualBlock(Model):
-    def __init__(self, filters, activation=kl.PReLU):
+    def __init__(self, filters, activation=kl.ReLU):
         super(ResidualBlock, self).__init__()
 
         self.filters = filters
@@ -78,7 +78,7 @@ class ResidualBlock(Model):
 
 
 class ANet(Model):
-    def __init__(self, activation=kl.PReLU, dropout_rate=0.5):
+    def __init__(self, activation=kl.ReLU, dropout_rate=0.5):
         super(ANet, self).__init__(name='A-Net')
 
         self.conv1 = ConvBlock(12, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv1')
@@ -98,29 +98,39 @@ class ANet(Model):
 
 
 class RUNet(Model):
-    def __init__(self, initial_filters=8, activation=kl.PReLU):
+    def __init__(self, initial_filters=8, activation=L.ReLU):
         super(RUNet, self).__init__(name='RU-Net')
 
         self.block1 = ResidualBlock(filters=initial_filters, activation=activation)
         self.block2 = ResidualBlock(filters=initial_filters * 2, activation=activation)
         self.block3 = ResidualBlock(filters=initial_filters * 4, activation=activation)
         self.block4 = ResidualBlock(filters=initial_filters * 8, activation=activation)
-        self.block5 = ResidualBlock(filters=initial_filters * 4, activation=activation)
-        self.block6 = ResidualBlock(filters=initial_filters * 2, activation=activation)
-        self.block7 = ResidualBlock(filters=initial_filters, activation=activation)
+        self.block5 = ResidualBlock(filters=initial_filters * 16, activation=activation)
+        self.block6 = ResidualBlock(filters=initial_filters * 32, activation=activation)
+        self.block7 = ResidualBlock(filters=initial_filters * 16, activation=activation)
+        self.block8 = ResidualBlock(filters=initial_filters * 8, activation=activation)
+        self.block9 = ResidualBlock(filters=initial_filters * 4, activation=activation)
+        self.block10 = ResidualBlock(filters=initial_filters * 2, activation=activation)
+        self.block11 = ResidualBlock(filters=initial_filters, activation=activation)
 
         self.conv_final = kl.Conv2D(filters=2, kernel_size=(1, 1), padding='same')
 
         self.mp1 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
         self.mp2 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
         self.mp3 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
+        self.mp4 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
+        self.mp5 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
 
-        self.deconv1 = kl.Conv2DTranspose(initial_filters * 4, kernel_size=(2, 2), strides=(2, 2), padding='same')
+        self.deconv1 = kl.Conv2DTranspose(initial_filters * 16, kernel_size=(2, 2), strides=(2, 2), padding='same')
         self.act1 = activation()
-        self.deconv2 = kl.Conv2DTranspose(initial_filters * 2, kernel_size=(2, 2), strides=(2, 2), padding='same')
+        self.deconv2 = kl.Conv2DTranspose(initial_filters * 8, kernel_size=(2, 2), strides=(2, 2), padding='same')
         self.act2 = activation()
-        self.deconv3 = kl.Conv2DTranspose(initial_filters, kernel_size=(2, 2), strides=(2, 2), padding='same')
+        self.deconv3 = kl.Conv2DTranspose(initial_filters * 4, kernel_size=(2, 2), strides=(2, 2), padding='same')
         self.act3 = activation()
+        self.deconv4 = kl.Conv2DTranspose(initial_filters * 2, kernel_size=(2, 2), strides=(2, 2), padding='same')
+        self.act4 = activation()
+        self.deconv5 = kl.Conv2DTranspose(initial_filters, kernel_size=(2, 2), strides=(2, 2), padding='same')
+        self.act5 = activation()
 
     def call(self, x, **kwargs):
         # Down
@@ -133,24 +143,38 @@ class RUNet(Model):
         block3_out = self.block3(block3_in, **kwargs)
         block4_in = self.mp3(block3_out)
 
-        # Bottom
         block4_out = self.block4(block4_in, **kwargs)
+        block5_in = self.mp4(block4_out)
+
+        block5_out = self.block5(block5_in, **kwargs)
+        block6_in = self.mp5(block5_out)
+
+        # Bottom
+        block6_out = self.block6(block6_in, **kwargs)
 
         # Up
-        block5_in = self.deconv1(block4_out)
-        block5_in = self.act1(block5_in)
-        block5_out = self.block5(tf.concat((block5_in, block3_out), axis=3), **kwargs)
+        block7_in = self.deconv1(block6_out)
+        block7_in = self.act1(block7_in)
+        block7_out = self.block7(tf.concat((block7_in, block5_out), axis=3), **kwargs)
 
-        block6_in = self.deconv2(block5_out)
-        block6_in = self.act2(block6_in)
-        block6_out = self.block6(tf.concat((block6_in, block2_out), axis=3), **kwargs)
+        block8_in = self.deconv2(block7_out)
+        block8_in = self.act2(block8_in)
+        block8_out = self.block8(tf.concat((block8_in, block4_out), axis=3), **kwargs)
 
-        block7_in = self.deconv3(block6_out)
-        block7_in = self.act3(block7_in)
-        block7_out = self.block7(tf.concat((block7_in, block1_out), axis=3), **kwargs)
+        block9_in = self.deconv3(block8_out)
+        block9_in = self.act3(block9_in)
+        block9_out = self.block9(tf.concat((block9_in, block3_out), axis=3), **kwargs)
+
+        block10_in = self.deconv4(block9_out)
+        block10_in = self.act4(block10_in)
+        block10_out = self.block10(tf.concat((block10_in, block2_out), axis=3), **kwargs)
+
+        block11_in = self.deconv5(block10_out)
+        block11_in = self.act5(block11_in)
+        block11_out = self.block11(tf.concat((block11_in, block1_out), axis=3), **kwargs)
 
         # Final Conv to get down to 1 channel
-        final_out = self.conv_final(block7_out)
+        final_out = self.conv_final(block11_out)
 
         return final_out
 
@@ -160,66 +184,58 @@ class ARUNet(Model):
         super(ARUNet, self).__init__()
 
         # Scale 1 (Normal Size)
-        self.anet1 = ANet()
-        self.runet1 = RUNet()
+        self.anet = ANet()
+        self.runet = RUNet()
 
         # Scale 2
         self.mp1 = kl.MaxPooling2D(pool_size=(2, 2))
         self.deconv1 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(2, 2), padding='same')
-        self.anet2 = ANet()
-        self.runet2 = RUNet()
 
         # Scale 3
         self.mp2 = kl.MaxPooling2D(pool_size=(2, 2))
         self.deconv2 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(4, 4), padding='same')
-        self.anet3 = ANet()
-        self.runet3 = RUNet()
 
         # Scale 4
         self.mp3 = kl.MaxPooling2D(pool_size=(2, 2))
         self.deconv3 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(8, 8), padding='same')
-        self.anet4 = ANet()
-        self.runet4 = RUNet()
 
         # Scale 5
         self.mp4 = kl.MaxPooling2D(pool_size=(2, 2))
         self.deconv4 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(16, 16), padding='same')
-        self.anet5 = ANet()
-        self.runet5 = RUNet()
 
         self.softmax = kl.Softmax(axis=3)
 
     def call(self, x, **kwargs):
         # Scale 1
-        anet1_out = self.anet1(x, **kwargs)
-        runet1_out = self.runet1(x, **kwargs)
+        anet1_out = self.anet(x, **kwargs)
+        runet1_out = self.runet(x, **kwargs)
         arunet1_out = tf.math.multiply(anet1_out, runet1_out)
 
         # Scale 2
         x2 = self.mp1(x)
-        anet2_out = self.anet2(x2, **kwargs)
-        runet2_out = self.runet2(x2, **kwargs)
+        anet2_out = self.anet(x2, **kwargs)
+        runet2_out = self.runet(x2, **kwargs)
         arunet2_out = tf.math.multiply(anet2_out, runet2_out)
         arunet2_out = self.deconv1(arunet2_out)
 
         # Scale 3
         x3 = self.mp2(x2)
-        anet3_out = self.anet3(x3, **kwargs)
-        runet3_out = self.runet3(x3, **kwargs)
+        anet3_out = self.anet(x3, **kwargs)
+        runet3_out = self.runet(x3, **kwargs)
         arunet3_out = tf.math.multiply(anet3_out, runet3_out)
         arunet3_out = self.deconv2(arunet3_out)
 
         # Scale 4
         x4 = self.mp3(x3)
-        anet4_out = self.anet4(x4, **kwargs)
-        runet4_out = self.runet4(x4, **kwargs)
+        anet4_out = self.anet(x4, **kwargs)
+        runet4_out = self.runet(x4, **kwargs)
         arunet4_out = tf.math.multiply(anet4_out, runet4_out)
         arunet4_out = self.deconv3(arunet4_out)
 
         # Scale 5
         x5 = self.mp4(x4)
-        anet5_out = self.anet5(x5, **kwargs)
-        runet5_out = self.runet5(x5, **kwargs)
+        anet5_out = self.anet(x5, **kwargs)
+        runet5_out = self.runet(x5, **kwargs)
         arunet5_out = tf.math.multiply(anet5_out, runet5_out)
         arunet5_out = self.deconv4(arunet5_out)
 

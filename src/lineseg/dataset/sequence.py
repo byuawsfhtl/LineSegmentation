@@ -62,7 +62,7 @@ class LineSequence(tf.keras.utils.Sequence):
 
     Keras Sequence class responsible for loading dataset in a TensorFlow compatible format.
     """
-    def __init__(self, img_path, label_path=None, desired_size=(768, 1152), augmentation_rate=1):
+    def __init__(self, img_path, label_path=None, desired_size=(1024, 1536), augmentation_rate=1):
         """
         Set up paths and necessary variables.
 

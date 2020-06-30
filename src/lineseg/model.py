@@ -3,18 +3,16 @@ import tensorflow.keras.layers as kl
 from tensorflow.keras import Model
 from tensorflow.keras.regularizers import l2
 
+L2c = 0.0005  # The L2 Coefficient
+
 
 class ConvBlock(Model):
-    def __init__(self, filters, activation=kl.ReLU, dropout_rate=0.0, max_pool=True, name="ConvBlock"):
+    def __init__(self, filters, activation=kl.ReLU, max_pool=True, name="ConvBlock"):
         super(ConvBlock, self).__init__()
 
         self.model = tf.keras.Sequential(name=name)
-        self.model.add(kl.Conv2D(filters, kernel_size=(4, 4), padding='same', kernel_regularizer=l2(0.0005)))
-        self.model.add(kl.BatchNormalization(renorm=True))
+        self.model.add(kl.Conv2D(filters, kernel_size=(4, 4), padding='same', kernel_regularizer=l2(L2c)))
         self.model.add(activation())
-
-        if dropout_rate != 0.0:
-            self.model.add(kl.Dropout(dropout_rate))
 
         if max_pool:
             self.model.add(kl.MaxPooling2D(pool_size=(2, 2), strides=(1, 1), padding='same'))
@@ -32,19 +30,16 @@ class ResidualBlock(Model):
 
         self.shortcut = kl.Conv2D(filters, kernel_size=(1, 1), use_bias=False)
 
-        self.conv1 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(0.0005))
-        self.bn1 = kl.BatchNormalization(renorm=True)
+        self.conv1 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2c))
         self.act1 = activation()
 
-        self.conv2 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(0.0005))
-        self.bn2 = kl.BatchNormalization(renorm=True)
+        self.conv2 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2c))
         self.act2 = activation()
 
-        self.conv3 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(0.0005))
-        self.bn3 = kl.BatchNormalization(renorm=True)
+        self.conv3 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2c))
         self.act3 = activation()
 
-        self.conv4 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(0.0005))
+        self.conv4 = kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2c))
 
     def call(self, x, **kwargs):
         # Add shortcut if necessary
@@ -53,17 +48,14 @@ class ResidualBlock(Model):
 
         # Conv1
         out = self.conv1(x)
-        out = self.bn1(out)
         out = self.act1(out)
 
         # Conv2
         out = self.conv2(out)
-        out = self.bn2(out)
         out = self.act2(out)
 
         # Conv3
         out = self.conv3(out)
-        out = self.bn3(out)
         out = self.act3(out)
 
         # Conv4 - Logits
@@ -79,13 +71,13 @@ class ResidualBlock(Model):
 
 
 class ANet(Model):
-    def __init__(self, activation=kl.ReLU, dropout_rate=0.5):
+    def __init__(self, activation=kl.ReLU):
         super(ANet, self).__init__(name='A-Net')
 
-        self.conv1 = ConvBlock(12, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv1')
-        self.conv2 = ConvBlock(16, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv2')
-        self.conv3 = ConvBlock(32, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv3')
-        self.conv4 = ConvBlock(2, activation=activation, dropout_rate=dropout_rate, max_pool=False, name='conv4')
+        self.conv1 = ConvBlock(12, activation=activation, max_pool=True, name='conv1')
+        self.conv2 = ConvBlock(16, activation=activation, max_pool=True, name='conv2')
+        self.conv3 = ConvBlock(32, activation=activation, max_pool=True, name='conv3')
+        self.conv4 = ConvBlock(2, activation=activation, max_pool=False, name='conv4')
 
     def call(self, x, **kwargs):
         out = self.conv1(x, **kwargs)
@@ -123,19 +115,19 @@ class RUNet(Model):
         self.mp5 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
 
         self.deconv1 = kl.Conv2DTranspose(initial_filters * 16, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(0.0005))
+                                          kernel_regularizer=l2(L2c))
         self.act1 = activation()
         self.deconv2 = kl.Conv2DTranspose(initial_filters * 8, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(0.0005))
+                                          kernel_regularizer=l2(L2c))
         self.act2 = activation()
         self.deconv3 = kl.Conv2DTranspose(initial_filters * 4, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(0.0005))
+                                          kernel_regularizer=l2(L2c))
         self.act3 = activation()
         self.deconv4 = kl.Conv2DTranspose(initial_filters * 2, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(0.0005))
+                                          kernel_regularizer=l2(L2c))
         self.act4 = activation()
         self.deconv5 = kl.Conv2DTranspose(initial_filters, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(0.0005))
+                                          kernel_regularizer=l2(L2c))
         self.act5 = activation()
 
     def call(self, x, **kwargs):
@@ -192,27 +184,22 @@ class ARUNet(Model):
         # Scale 1 (Normal Size)
         self.anet = ANet()
         self.runet = RUNet()
-
         # Scale 2
         self.mp1 = kl.MaxPooling2D(pool_size=(2, 2))
         self.deconv1 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(2, 2), padding='same',
-                                          kernel_regularizer=l2(0.0005))
-
+                                          kernel_regularizer=l2(L2c))
         # Scale 3
         self.mp2 = kl.MaxPooling2D(pool_size=(2, 2))
         self.deconv2 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(4, 4), padding='same',
-                                          kernel_regularizer=l2(0.0005))
-
+                                          kernel_regularizer=l2(L2c))
         # Scale 4
         self.mp3 = kl.MaxPooling2D(pool_size=(2, 2))
         self.deconv3 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(8, 8), padding='same',
-                                          kernel_regularizer=l2(0.0005))
-
+                                          kernel_regularizer=l2(L2c))
         # Scale 5
         self.mp4 = kl.MaxPooling2D(pool_size=(2, 2))
         self.deconv4 = kl.Conv2DTranspose(filters=1, kernel_size=(2, 2), strides=(16, 16), padding='same',
-                                          kernel_regularizer=l2(0.0005))
-
+                                          kernel_regularizer=l2(L2c))
         self.softmax = kl.Softmax(axis=3)
 
     def call(self, x, **kwargs):

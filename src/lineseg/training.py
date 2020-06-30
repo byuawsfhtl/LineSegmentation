@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow_addons as tfa
 from tqdm import tqdm
 
 from src.lineseg.model import ARUNet
@@ -30,7 +29,6 @@ class ModelTrainer:
         :param weights_path: The path to the weights if we are starting from a pre-trained model
         :param save_best_after: Save model weights (if it achieved best IoU) after how many epochs?
         """
-
         self.epochs = epochs
         self.batch_size = batch_size
         self.train_dataset = train_dataset
@@ -44,8 +42,7 @@ class ModelTrainer:
         if weights_path is not None:
             self.model.load_weights(weights_path)
 
-        rmsprop = tf.keras.optimizers.RMSprop(learning_rate=lr, decay=0.985)
-        self.optimizer = tfa.optimizers.MovingAverage(rmsprop, average_decay=.9995)
+        self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
 
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')

@@ -87,7 +87,7 @@ class ANet(Model):
         self.conv4 = ConvBlock(2, activation=activation, dropout_rate=dropout_rate, max_pool=False, name='conv4')
 
     def call(self, x, **kwargs):
-        out = self.conv1(x)
+        out = self.conv1(x, **kwargs)
         out = self.conv2(out, **kwargs)
         out = self.conv3(out, **kwargs)
         out = self.conv4(out, **kwargs)

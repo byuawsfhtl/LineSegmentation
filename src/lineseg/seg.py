@@ -96,7 +96,7 @@ def sharpen_image(image_prediction, thresh_start=.1, thresh_end=.9, filter_sizes
     return clean_seam_image
 
 
-def cluster(image, min_points=100):
+def cluster(image, min_points=160):
     """
     Cluster the points on the image using the DBSCAN clustering algorithm. Perform some form of skeletonization.
 

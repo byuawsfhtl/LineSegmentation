@@ -42,7 +42,7 @@ class ModelTrainer:
         if weights_path is not None:
             self.model.load_weights(weights_path)
 
-        self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr)
+        self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr, clipnorm=1.0, clipvalue=0.5)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
 
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')

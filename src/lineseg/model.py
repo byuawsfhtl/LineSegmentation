@@ -3,7 +3,7 @@ import tensorflow.keras.layers as kl
 from tensorflow.keras import Model
 from tensorflow.keras.regularizers import l2
 
-L2c = 0.0004  # The L2 Coefficient
+L2c = 0.0005  # The L2 Coefficient
 
 
 class ConvBnActDropMp(Model):

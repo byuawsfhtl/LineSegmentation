@@ -3,11 +3,11 @@ import tensorflow.keras.layers as kl
 from tensorflow.keras import Model
 from tensorflow.keras.regularizers import l2
 
-L2c = 0.0005  # The L2 Coefficient
+L2c = 0.0003  # The L2 Coefficient
 
 
 class ConvBnActDropMp(Model):
-    def __init__(self, filters, activation=kl.ReLU, dropout_rate=0.2, max_pool=True, name="ConvBnActDropMp"):
+    def __init__(self, filters, activation=kl.ReLU, dropout_rate=0.3, max_pool=True, name="ConvBnActDropMp"):
         super(ConvBnActDropMp, self).__init__()
 
         self.model = tf.keras.Sequential(name=name)
@@ -26,7 +26,7 @@ class ConvBnActDropMp(Model):
 
 
 class DeconvBnActDrop(Model):
-    def __init__(self, filters, kernel_size=(2, 2), strides=(2, 2), activation=kl.ReLU, dropout_rate=0.2,
+    def __init__(self, filters, kernel_size=(2, 2), strides=(2, 2), activation=kl.ReLU, dropout_rate=0.3,
                  name="DeconvBnActDrop"):
         super(DeconvBnActDrop, self).__init__()
 
@@ -44,7 +44,7 @@ class DeconvBnActDrop(Model):
 
 
 class ResidualBlock(Model):
-    def __init__(self, filters, activation=kl.ReLU, dropout_rate=0.2):
+    def __init__(self, filters, activation=kl.ReLU, dropout_rate=0.3):
         super(ResidualBlock, self).__init__()
 
         self.filters = filters
@@ -91,7 +91,7 @@ class ResidualBlock(Model):
 
 
 class ANet(Model):
-    def __init__(self, activation=kl.ReLU, dropout_rate=0.2):
+    def __init__(self, activation=kl.ReLU, dropout_rate=0.3):
         super(ANet, self).__init__(name='A-Net')
 
         self.conv1 = ConvBnActDropMp(12, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv1')
@@ -109,7 +109,7 @@ class ANet(Model):
 
 
 class RUNet(Model):
-    def __init__(self, initial_filters=8, activation=kl.ReLU, dropout_rate=0.2):
+    def __init__(self, initial_filters=8, activation=kl.ReLU, dropout_rate=0.3):
         super(RUNet, self).__init__(name='RU-Net')
 
         self.block1 = ResidualBlock(filters=initial_filters, activation=activation, dropout_rate=dropout_rate)
@@ -186,7 +186,7 @@ class RUNet(Model):
 
 
 class ARUNet(Model):
-    def __init__(self, activation=kl.ReLU, runet_initial_filters=8, dropout_rate=0.0):
+    def __init__(self, activation=kl.ReLU, runet_initial_filters=8, dropout_rate=0.3):
         super(ARUNet, self).__init__()
 
         # Scale 1 (Normal Size)

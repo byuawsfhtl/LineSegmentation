@@ -12,10 +12,10 @@ class ConvBnActDropMp(Model):
 
         self.model = tf.keras.Sequential(name=name)
         self.model.add(kl.Conv2D(filters, kernel_size=(4, 4), padding='same', kernel_regularizer=l2(L2c)))
-        self.model.add(kl.BatchNormalization(renorm=True))
+        # self.model.add(kl.BatchNormalization(renorm=True))
         self.model.add(activation())
 
-        if dropout_rate != 0.0:
+        if dropout_rate is not None and dropout_rate != 0.0:
             self.model.add(kl.Dropout(dropout_rate))
 
         if max_pool:
@@ -33,7 +33,7 @@ class DeconvBnActDrop(Model):
         self.model = tf.keras.Sequential(name=name)
         self.model.add(kl.Conv2DTranspose(filters, kernel_size=kernel_size, strides=strides, padding='same',
                                           kernel_regularizer=l2(L2c)))
-        self.model.add(kl.BatchNormalization(renorm=True))
+        # self.model.add(kl.BatchNormalization(renorm=True))
         self.model.add(activation())
 
         if dropout_rate is not None and dropout_rate != 0.0:
@@ -54,19 +54,19 @@ class ResidualBlock(Model):
 
         self.conv = tf.keras.Sequential()
         self.conv.add(kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2c)))
-        self.conv.add(kl.BatchNormalization(renorm=True))
+        # self.conv.add(kl.BatchNormalization(renorm=True))
         self.conv.add(activation())
         if dropout_rate is not None and dropout_rate != 0.0:
             self.conv.add(kl.Dropout(dropout_rate))
 
         self.conv.add(kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2c)))
-        self.conv.add(kl.BatchNormalization(renorm=True))
+        # self.conv.add(kl.BatchNormalization(renorm=True))
         self.conv.add(activation())
         if dropout_rate is not None and dropout_rate != 0.0:
             self.conv.add(kl.Dropout(dropout_rate))
 
         self.conv.add(kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2c)))
-        self.conv.add(kl.BatchNormalization(renorm=True))
+        # self.conv.add(kl.BatchNormalization(renorm=True))
         self.conv.add(activation())
         if dropout_rate is not None and dropout_rate != 0.0:
             self.conv.add(kl.Dropout(dropout_rate))
@@ -186,7 +186,7 @@ class RUNet(Model):
 
 
 class ARUNet(Model):
-    def __init__(self, activation=kl.ReLU, runet_initial_filters=8, dropout_rate=0.2):
+    def __init__(self, activation=kl.ReLU, runet_initial_filters=8, dropout_rate=0.0):
         super(ARUNet, self).__init__()
 
         # Scale 1 (Normal Size)

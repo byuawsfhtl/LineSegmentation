@@ -132,15 +132,15 @@ class RUNet(Model):
         self.mp4 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
         self.mp5 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
 
-        self.deconv1 = DeconvBnActDrop(initial_filters * 16, kernel_size=(2, 2), strides=(2, 2), activation=activation,
+        self.deconv1 = DeconvBnActDrop(initial_filters * 16, kernel_size=(3, 3), strides=(2, 2), activation=activation,
                                        dropout_rate=dropout_rate)
-        self.deconv2 = DeconvBnActDrop(initial_filters * 8, kernel_size=(2, 2), strides=(2, 2), activation=activation,
+        self.deconv2 = DeconvBnActDrop(initial_filters * 8, kernel_size=(3, 3), strides=(2, 2), activation=activation,
                                        dropout_rate=dropout_rate)
-        self.deconv3 = DeconvBnActDrop(initial_filters * 4, kernel_size=(2, 2), strides=(2, 2), activation=activation,
+        self.deconv3 = DeconvBnActDrop(initial_filters * 4, kernel_size=(3, 3), strides=(2, 2), activation=activation,
                                        dropout_rate=dropout_rate)
-        self.deconv4 = DeconvBnActDrop(initial_filters * 2, kernel_size=(2, 2), strides=(2, 2), activation=activation,
+        self.deconv4 = DeconvBnActDrop(initial_filters * 2, kernel_size=(3, 3), strides=(2, 2), activation=activation,
                                        dropout_rate=dropout_rate)
-        self.deconv5 = DeconvBnActDrop(initial_filters * 1, kernel_size=(2, 2), strides=(2, 2), activation=activation,
+        self.deconv5 = DeconvBnActDrop(initial_filters * 1, kernel_size=(3, 3), strides=(2, 2), activation=activation,
                                        dropout_rate=dropout_rate)
 
     def call(self, x, **kwargs):

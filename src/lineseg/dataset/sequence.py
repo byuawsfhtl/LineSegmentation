@@ -49,9 +49,6 @@ def random_augmentation(img, label):
     # Apply Random Brightness Transformation
     if random.randint(0, 1):
         img = tf.keras.preprocessing.image.random_brightness(img, (.01, 1.4))
-    # Apply Random Channel Shift
-    else:
-        img = tf.keras.preprocessing.image.random_channel_shift(img, 100)
 
     return img, label
 

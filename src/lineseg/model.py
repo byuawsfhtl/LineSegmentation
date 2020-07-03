@@ -186,7 +186,7 @@ class RUNet(Model):
 
 
 class ARUNet(Model):
-    def __init__(self, activation=kl.ReLU, runet_initial_filters=8, dropout_rate=0.3):
+    def __init__(self, activation=kl.ReLU, runet_initial_filters=8, dropout_rate=0.0):
         super(ARUNet, self).__init__()
 
         # Scale 1 (Normal Size)

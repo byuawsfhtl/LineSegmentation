@@ -38,7 +38,10 @@ def augment(img, label):
 
     mix = tf.image.random_flip_left_right(mix)
 
-    return mix[:, :, 0], mix[:, :, 1]
+    img = tf.expand_dims(mix[:, :, 0], 2)
+    label = tf.expand_dims(mix[:, :, 1], 2)
+
+    return img, label
 
 
 class ModelTrainer:

@@ -111,7 +111,7 @@ class ModelTrainer:
         """
         with tf.GradientTape() as tape:
             predictions = self.model(images, training=True)
-            loss = self.objective(tf.one_hot(labels, 2), predictions)
+            loss = self.objective(tf.one_hot(tf.cast(labels, tf.int32), 2), predictions)
             loss += tf.add_n(self.model.losses)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
@@ -129,7 +129,7 @@ class ModelTrainer:
         :return: None
         """
         predictions = self.model(images, training=False)
-        loss = self.objective(tf.one_hot(labels, 2), predictions)
+        loss = self.objective(tf.one_hot(tf.cast(labels, tf.int32), 2), predictions)
         loss += tf.add_n(self.model.losses)
 
         self.val_loss(loss)

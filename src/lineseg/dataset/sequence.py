@@ -59,8 +59,8 @@ class LineSequence(tf.keras.utils.Sequence):
             height_scale = height // 1000
             width_scale = width // 1000
             scale = height_scale if height_scale > width_scale else width_scale
-            height /= scale
-            width /= scale
+            height = int(height / scale)
+            width = int(width / scale)
 
         height = self.closest_multiple(height)
         width = self.closest_multiple(width)

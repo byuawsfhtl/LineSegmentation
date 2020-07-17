@@ -1,56 +1,8 @@
 import os
-import random
 
 import numpy as np
 from PIL import Image
 import tensorflow as tf
-
-
-def random_augmentation(img, label):
-    """
-    Function to apply random augmentations to the image and label image
-
-    :param img: The image to be transformed
-    :param label: The label to be transformed
-    :return: The transformed image and label
-    """
-    theta = 0
-    tx = 0
-    ty = 0
-    zx = 1
-    zy = 1
-    shear = 0
-
-    # Random Flip
-    if random.randint(0, 2) == 0:
-        img = tf.image.flip_left_right(img)
-        label = tf.image.flip_left_right(label)
-    # Random Rotate
-    if random.randint(0, 1):  # .5
-        theta = random.uniform(-5, 5)
-    # Random Shear
-    elif random.randint(0, 1):  # Only do shear if we haven't rotated
-        shear = random.uniform(-5, 5)
-    # Random Zoom
-    if random.randint(0, 2) == 0:
-        zx = random.uniform(0.9, 1.1)
-        zy = random.uniform(0.9, 1.1)
-    # Random Translation
-    if random.randint(0, 1):
-        tx = random.uniform(-35, 35)
-        ty = random.uniform(-35, 35)
-
-    # Apply Affine Transformation
-    img = tf.keras.preprocessing.image.apply_affine_transform(img.numpy(), theta=theta, tx=tx, ty=ty, shear=shear,
-                                                              zx=zx, zy=zy)
-    label = tf.keras.preprocessing.image.apply_affine_transform(label.numpy(), theta=theta, tx=tx, ty=ty, shear=shear,
-                                                                zx=zx, zy=zy)
-
-    # Apply Random Brightness Transformation
-    if random.randint(0, 1):
-        img = tf.keras.preprocessing.image.random_brightness(img, (.01, 1.4))
-
-    return img, label
 
 
 class LineSequence(tf.keras.utils.Sequence):
@@ -59,56 +11,33 @@ class LineSequence(tf.keras.utils.Sequence):
 
     Keras Sequence class responsible for loading dataset in a TensorFlow compatible format.
     """
-    def __init__(self, img_path, label_path=None, desired_size=(1024, 1536), augmentation_rate=1):
+    def __init__(self, img_path, label_path=None, mp_layers=10):
         """
         Set up paths and necessary variables.
 
         :param img_path: Path to the images
         :param label_path:
-        :param desired_size:
         """
         self.img_path = img_path
         self.label_path = label_path
-        self.augmentation_rate = augmentation_rate
+        self.divisor = 2 ** mp_layers
 
         if not os.path.exists(self.img_path):
             raise Exception('Images do not exist in', self.img_path)
         if self.label_path is not None and not os.path.exists(self.label_path):
             raise Exception('Labels do not exist in', self.label_path)
 
-        self.desired_size = desired_size
         self.imgs = os.listdir(self.img_path)
 
-    def resize(self, img, desired_size):
-        """
-        Method to resize the image to the desired size
+    def closest_multiple(self, value):
+        q = value // self.divisor
+        n1 = q * self.divisor
+        n2 = (q + 1) * self.divisor
 
-        :param img: The image given as either PIL image or numpy array
-        :param desired_size: Tuple designating the x, y value of the desired image size
-        :return: The resized image as numpy array
-        """
-        img_size = np.array(img).shape
-
-        img_ratio = img_size[0] / img_size[1]
-        desired_ratio = desired_size[0] / desired_size[1]
-
-        if img_ratio >= desired_ratio:
-            # Solve by height
-            new_height = desired_size[0]
-            new_width = int(desired_size[0] // img_ratio)
+        if np.abs(n1 - value) < np.abs(n2 - value):
+            return n1
         else:
-            # Solve by width
-            new_height = int(desired_size[1] * img_ratio)
-            new_width = desired_size[1]
-
-        img = np.array(img.resize((new_width, new_height)))
-
-        border_top = desired_size[0] - new_height
-        border_right = desired_size[1] - new_width
-
-        img = np.pad(img, [(border_top, 0), (0, border_right)], mode='constant', constant_values=0)
-
-        return img
+            return n2
 
     def tensor_image(self, path, pil_format):
         """
@@ -120,12 +49,24 @@ class LineSequence(tf.keras.utils.Sequence):
         :return: The image as tensor
         """
         img = Image.open(path)
-        img = img.convert(pil_format)
-        img = self.resize(img, self.desired_size)
-        img_tensor = tf.constant(img, dtype=tf.float32)
-        img_tensor = tf.expand_dims(img_tensor, 2)
+        img = np.array(img.convert(pil_format), dtype=np.float32)
+        img = tf.expand_dims(img, 2)
 
-        return img_tensor
+        # Downscale images that are too big
+        height = img.shape[0]
+        width = img.shape[1]
+        if height or width > 2000:
+            height_scale = height // 1000
+            width_scale = width // 1000
+            scale = height_scale if height_scale > width_scale else width_scale
+            height /= scale
+            width /= scale
+
+        height = self.closest_multiple(img.shape[0])
+        width = self.closest_multiple(img.shape[1])
+        img = tf.image.resize_with_pad(img, height, width)
+
+        return img
 
     def __getitem__(self, index):
         """
@@ -134,20 +75,13 @@ class LineSequence(tf.keras.utils.Sequence):
         :param index: The index number of the image/label to be retrieved
         :return: The image as tensor and (possibly) label as tensor
         """
-        img_index = index // self.augmentation_rate
-
-        img = self.tensor_image(os.path.join(self.img_path, self.imgs[img_index]), pil_format="L")
+        img = self.tensor_image(os.path.join(self.img_path, self.imgs[index]), pil_format="L")
         img = tf.image.per_image_standardization(img)  # Adjust image to have mean 0 and variance 1
 
         # FOR TRAINING
         # If a label_path was given, convert the label to a tensor and return it along with the image tensor
         if self.label_path is not None:
-            label = self.tensor_image(os.path.join(self.label_path, self.imgs[img_index].split('.')[0] + '_gt.jpg'),
-                                      pil_format="1")
-
-            # Don't perform data augmentation the first time we see this image
-            if index % self.augmentation_rate != 0:
-                img, label = random_augmentation(img, label)
+            label = self.tensor_image(os.path.join(self.label_path, self.imgs[index]), pil_format="1")
 
             return img, label
 
@@ -160,4 +94,4 @@ class LineSequence(tf.keras.utils.Sequence):
         The number of items in the sequence
         :return: Length of the sequence
         """
-        return len(self.imgs) * self.augmentation_rate
+        return len(self.imgs)

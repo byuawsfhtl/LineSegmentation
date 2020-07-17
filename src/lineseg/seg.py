@@ -26,14 +26,15 @@ def segment_from_predictions(original_image, baseline_prediction, seam_predictio
     :return: None
     """
     original_image = tf.squeeze(original_image).numpy()
-    # baseline_image = tf.squeeze(tf.argmax(baseline_prediction, axis=3)).numpy()
-    baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
-    seam_image = tf.squeeze(seam_prediction[:, :, :, 1])
+    baseline_image = tf.squeeze(tf.argmax(baseline_prediction, axis=3)).numpy()
+    seam_image = tf.squeeze(tf.argmax(seam_prediction, axis=3)).numpy()
+    # baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
+    # seam_image = tf.squeeze(seam_prediction[:, :, :, 1])
 
-    sharpened_baseline_image = sharpen_image(baseline_image)
-    sharpened_seam_image = sharpen_image(seam_image)
+    # baseline_image = sharpen_image(baseline_image)
+    # seam_image = sharpen_image(seam_image)
 
-    baselines = cluster(sharpened_baseline_image)
+    baselines = cluster(baseline_image)
     baselines = sort_lines(baselines, original_image.shape)
 
     # Search the cleaned-up seam image for upper/lower seams
@@ -46,8 +47,8 @@ def segment_from_predictions(original_image, baseline_prediction, seam_predictio
         seam_bottom_founds = []
         for index, point in enumerate(baseline):
             if index % step_size == 0:
-                seam_top_point, seam_top_found = search_up(point, sharpened_seam_image)
-                seam_bottom_point, seam_bottom_found = search_down(point, sharpened_seam_image)
+                seam_top_point, seam_top_found = search_up(point, seam_image)
+                seam_bottom_point, seam_bottom_found = search_down(point, seam_image)
 
                 seam_top.append(seam_top_point)
                 seam_bottom.append(seam_bottom_point)
@@ -63,7 +64,9 @@ def segment_from_predictions(original_image, baseline_prediction, seam_predictio
 
     # Iterate over all baselines/polygons - segment, dewarp, and crop
     for index, (poly, baseline) in enumerate(zip(polygons, baselines)):
-        segment, segment_baseline = segment_from_polygon(Polygon(poly), Image.fromarray(original_image), baseline)
+        segment, segment_baseline = segment_from_polygon(Polygon(poly),
+                                                         Image.fromarray(np.invert(original_image.astype(np.uint8))),
+                                                         baseline)
         dewarped_segment = dewarp(segment, segment_baseline)
         final_segment = final_crop(dewarped_segment)
 
@@ -107,7 +110,7 @@ def cluster(image, min_points=160):
     """
     # Perform clustering according to the DBSCAN algorithm
     points = tf.where(image).numpy()  # Find the coordinates that are non-zero
-    clustered_points = DBSCAN(eps=10, min_samples=5).fit(points)
+    clustered_points = DBSCAN(eps=20, min_samples=15).fit(points)
 
     # Create a list of lists to hold the clusters based on the labeling
     unique_labels = np.unique(clustered_points.labels_)
@@ -144,7 +147,7 @@ def cluster(image, min_points=160):
     return nms_clusters
 
 
-def search_up(point, image, max_height=60, min_height=8):
+def search_up(point, image, max_height=100, min_height=10):
     """
     Search for a seam point above the given baseline point.
 
@@ -172,7 +175,7 @@ def search_up(point, image, max_height=60, min_height=8):
     return [x, final_y], True
 
 
-def search_down(point, image, max_height=30, min_height=6):
+def search_down(point, image, max_height=50, min_height=6):
     """
     Search for a seam point below the given baseline point.
 
@@ -368,7 +371,7 @@ def final_crop(im):
     :return: The cropped image
     """
     # Mask of non-black pixels (assuming image has a single channel).
-    mask = im < 255
+    mask = im < 1
 
     # Coordinates of non-black pixels.
     coords = np.argwhere(mask)

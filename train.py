@@ -64,8 +64,7 @@ def train_model(cmd_args):
     args.parse()
 
     # Create a Keras Sequence so that we can access data
-    sequence = LineSequence(args[TArg.IMG_PATH], args[TArg.LABEL_PATH], eval(args[TArg.IMG_DIM_AFTER_RESIZE]),
-                            augmentation_rate=int(args[TArg.AUGMENTATION_RATE]))
+    sequence = LineSequence(args[TArg.IMG_PATH], args[TArg.LABEL_PATH])
 
     # Create a tfrecord from the created sequence. This will speed up training dramatically
     if args[TArg.TFRECORD_IN_PATH] is None:
@@ -80,14 +79,9 @@ def train_model(cmd_args):
     train_dataset_size = int(float(args[TArg.TRAIN_SIZE]) * dataset_size)
     val_dataset_size = dataset_size - train_dataset_size
 
-    # Create a TFRecordDataset using the newly created tfrecord
-    dataset = tf.data.TFRecordDataset(tfrecord_path).map(read_tfrecord)
-    train_dataset = dataset.take(train_dataset_size).shuffle(50).batch(int(args[TArg.BATCH_SIZE]))
-    val_dataset = dataset.skip(train_dataset_size).shuffle(50).batch(int(args[TArg.BATCH_SIZE]))
-
     # Create the trainer object and load in configuration settings
     train = ModelTrainer(epochs=int(args[TArg.EPOCHS]), batch_size=int(args[TArg.BATCH_SIZE]),
-                         train_dataset=train_dataset, train_dataset_size=train_dataset_size, val_dataset=val_dataset,
+                         dataset_path=tfrecord_path, train_dataset_size=train_dataset_size,
                          val_dataset_size=val_dataset_size, save_path=args[TArg.MODEL_OUT],
                          lr=float(args[TArg.LEARNING_RATE]), weights_path=args[TArg.WEIGHTS_PATH],
                          save_best_after=int(args[TArg.SAVE_BEST_AFTER]))

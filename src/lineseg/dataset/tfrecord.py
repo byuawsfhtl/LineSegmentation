@@ -48,6 +48,9 @@ def read_tfrecord(single_record):
     image = tf.io.parse_tensor(single_record['image'], out_type=tf.float32)
     label = tf.io.parse_tensor(single_record['label'], out_type=tf.float32)
 
+    image.set_shape((None, None, 1))
+    label.set_shape((None, None, 1))
+
     return image, label
 
 

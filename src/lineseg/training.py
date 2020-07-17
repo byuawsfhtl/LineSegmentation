@@ -5,7 +5,7 @@ from src.lineseg.model import ARUNet
 from src.lineseg.dataset.tfrecord import read_tfrecord
 
 
-def subsample(img, label):
+def augment(img, label):
     index = tf.random.uniform([], 0, 4, dtype=tf.int32)
 
     height = tf.shape(img)[0]
@@ -21,25 +21,9 @@ def subsample(img, label):
         img = tf.image.resize(img, (height, width // 2))
         label = tf.image.resize(label, (height, width // 2))
 
-    return img, label
-
-
-def augment(img, label):
-    mix = tf.concat((img, label), axis=2)
-
-    if tf.random.uniform((), 0, 2, dtype=tf.int32) != 0:
-        crop_height = tf.random.uniform((), 768, 1025, dtype=tf.int32)
-        crop_width = tf.random.uniform((), 1024, 1280, dtype=tf.int32)
-
-        height = int(tf.shape(img)[0])
-        width = int(tf.shape(img)[1])
-        mix = tf.image.random_crop(mix, (crop_height, crop_width, 2))
-        mix = tf.image.resize_with_pad(mix, height, width)
-
-    mix = tf.image.random_flip_left_right(mix)
-
-    img = tf.expand_dims(mix[:, :, 0], 2)
-    label = tf.expand_dims(mix[:, :, 1], 2)
+    if tf.random.uniform((), 0, 2, dtype=tf.int32) == 0:
+        img = tf.image.flip_left_right(img)
+        label = tf.image.flip_left_right(label)
 
     return img, label
 
@@ -78,7 +62,7 @@ class ModelTrainer:
 
         self.dataset = tf.data.TFRecordDataset(dataset_path).map(read_tfrecord)
         self.train_dataset = self.dataset.take(train_dataset_size).shuffle(shuffle_size, reshuffle_each_iteration=True)\
-                                         .map(subsample).map(augment).batch(self.batch_size)
+                                         .map(augment).batch(self.batch_size)
         self.val_dataset = self.dataset.skip(train_dataset_size).batch(self.batch_size)
 
         self.model = ARUNet()

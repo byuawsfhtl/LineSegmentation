@@ -55,15 +55,15 @@ class LineSequence(tf.keras.utils.Sequence):
         # Downscale images that are too big
         height = img.shape[0]
         width = img.shape[1]
-        if height or width > 2000:
+        if height or width >= 2000:
             height_scale = height // 1000
             width_scale = width // 1000
             scale = height_scale if height_scale > width_scale else width_scale
             height /= scale
             width /= scale
 
-        height = self.closest_multiple(img.shape[0])
-        width = self.closest_multiple(img.shape[1])
+        height = self.closest_multiple(height)
+        width = self.closest_multiple(width)
         img = tf.image.resize_with_pad(img, height, width)
 
         return img

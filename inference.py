@@ -6,7 +6,7 @@ from tqdm import tqdm
 from src.lineseg.model import ARUNet
 from src.lineseg.dataset.sequence import LineSequence
 from src.lineseg.util.arguments import IArg, InfArgParser
-from src.lineseg.seg import segment_from_predictions
+from src.lineseg.seg import segment_from_predictions, segment_from_predictions_without_seam
 
 
 def inference(cmd_args):
@@ -39,20 +39,24 @@ def inference(cmd_args):
 
     # Create our ARU-Net Models
     baseline_model = ARUNet()
-    seam_model = ARUNet()
+    # seam_model = ARUNet()
 
     # Load the pre-trained model weights
     baseline_model.load_weights(args[IArg.WEIGHTS_PATH_BASELINE])
-    seam_model.load_weights(args[IArg.WEIGHTS_PATH_SEAM])
+    # seam_model.load_weights(args[IArg.WEIGHTS_PATH_SEAM])
 
     # Iterate through each of the images and perform inference
-    for img, img_name in tqdm(sequence):
-        baseline_prediction = baseline_model(tf.expand_dims(img, 0), training=False)
-        seam_prediction = seam_model(tf.expand_dims(img, 0), training=False)
+    for img_orig, img_norm, img_name in tqdm(sequence):
+        baseline_prediction = baseline_model(tf.expand_dims(img_norm, 0), training=False)
+        # seam_prediction = seam_model(tf.expand_dims(img, 0), training=False)
 
-        segment_from_predictions(img, baseline_prediction, seam_prediction, img_name,
-                                 int(args[IArg.SEGMENTATION_STEP_SIZE]),
-                                 plot_images=eval(args[IArg.SHOULD_PLOT_IMAGES]), save_path=args[IArg.OUT_PATH])
+        segment_from_predictions_without_seam(img_orig, baseline_prediction, img_name,
+                                              plot_images=eval(args[IArg.SHOULD_PLOT_IMAGES]),
+                                              save_path=args[IArg.OUT_PATH])
+
+        # segment_from_predictions(img, baseline_prediction, seam_prediction, img_name,
+        #                          int(args[IArg.SEGMENTATION_STEP_SIZE]),
+        #                          plot_images=eval(args[IArg.SHOULD_PLOT_IMAGES]), save_path=args[IArg.OUT_PATH])
 
     print('Finished performing inference.')
 

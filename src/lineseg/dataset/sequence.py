@@ -76,18 +76,18 @@ class LineSequence(tf.keras.utils.Sequence):
         :return: The image as tensor and (possibly) label as tensor
         """
         img = self.tensor_image(os.path.join(self.img_path, self.imgs[index]), pil_format="L")
-        img = tf.image.per_image_standardization(img)  # Adjust image to have mean 0 and variance 1
 
         # FOR TRAINING
         # If a label_path was given, convert the label to a tensor and return it along with the image tensor
         if self.label_path is not None:
+            img = tf.image.per_image_standardization(img)  # Adjust image to have mean 0 and variance 1
             label = self.tensor_image(os.path.join(self.label_path, self.imgs[index]), pil_format="1")
 
             return img, label
 
         # FOR INFERENCE
         # If no label was given, return the image tensor and the image name
-        return img, self.imgs[index].split('.')[0]
+        return img, tf.image.per_image_standardization(img), self.imgs[index].split('.')[0]
 
     def __len__(self):
         """

@@ -146,4 +146,4 @@ class InfArgParser(ArgParser):
 
         # Add Arguments to arg_dict and ensure required args are present
         self.add_arguments()
-        self.check_required_args([IArg.IMG_PATH, IArg.OUT_PATH, IArg.WEIGHTS_PATH_BASELINE, IArg.WEIGHTS_PATH_SEAM])
+        self.check_required_args([IArg.IMG_PATH, IArg.OUT_PATH, IArg.WEIGHTS_PATH_BASELINE])  #, IArg.WEIGHTS_PATH_SEAM])

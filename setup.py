@@ -15,7 +15,6 @@ setup(
     url='https://github.com/BYU-Handwriting-Lab/LineSegmentation',
     author='BYU-Handwriting-Lab',
     keywords='BYU segmentation line handwriting recognition',
-    package_dir={'': 'src'},
-    packages=find_packages(where='src'),
+    packages=find_packages(),
     install_requires=['tensorflow', 'pillow', 'scikit-learn', 'tqdm', 'matplotlib', 'shapely', 'numpy']
 )

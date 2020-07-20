@@ -3,10 +3,10 @@ import sys
 import tensorflow as tf
 from tqdm import tqdm
 
-from src.lineseg.model import ARUNet
-from src.lineseg.dataset.sequence import LineSequence
-from src.lineseg.util.arguments import IArg, InfArgParser
-from src.lineseg.seg import segment_from_predictions, segment_from_predictions_without_seam
+from lineseg.model import ARUNet
+from lineseg.dataset.sequence import LineSequence
+from lineseg.util.arguments import IArg, InfArgParser
+from lineseg.seg import segment_from_predictions_without_seam
 
 
 def inference(cmd_args):

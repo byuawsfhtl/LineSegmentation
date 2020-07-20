@@ -1,12 +1,11 @@
 import sys
 
-import tensorflow as tf
 from matplotlib import pyplot as plt
 
-from src.lineseg.dataset.sequence import LineSequence
-from src.lineseg.dataset.tfrecord import create_tfrecord_from_sequence, read_tfrecord
-from src.lineseg.training import ModelTrainer
-from src.lineseg.util.arguments import TArg, TrainArgParser
+from lineseg.dataset.sequence import LineSequence
+from lineseg.dataset.tfrecord import create_tfrecord_from_sequence
+from lineseg.training import ModelTrainer
+from lineseg.util.arguments import TArg, TrainArgParser
 
 
 def show_graph(train_metric, val_metric, title):

@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tqdm import tqdm
 
-from src.lineseg.model import ARUNet
-from src.lineseg.dataset.tfrecord import read_tfrecord
+from lineseg.model import ARUNet
+from lineseg.dataset.tfrecord import read_tfrecord
 
 
 def augment(img, label):

@@ -87,3 +87,27 @@ The full list of arguments include:
 * plot (optional): Should each text line snippet be shown to the screen during inference? (default: False)
 * image_resize (optional): The height and width for resizing the image when sent into the model for inference
                            (default: 768, 1152)
+
+
+## Conda Package
+
+This project can be packaged with Anaconda and uploaded to the cloud. It is done through the use of ```setup.py```
+and ```meta.yaml```. Slight modifications to these files may need to take place if dependencies to the code base change.
+The project can be packaged using the following ```conda-build``` command.
+
+`
+conda-build ./conda.recipe -c defaults -c conda-forge
+`
+
+Make sure the lineseg environment has been built and activated before you run the conda-build command.
+
+`
+conda env create -f environment.yaml
+conda activate linseg_env
+`
+
+Once the project has been packaged, the packaged file can be uploaded to Anaconda Cloud (Anaconda-Client is required):
+
+`
+anaconda upload -u BYU-Handwriting-Lab <FILENAME>
+`

@@ -54,13 +54,9 @@ def segment_from_predictions_without_seam(original_image, baseline_prediction, f
 
     baseline_image = sharpen_image(baseline_image)
 
-    plot_image(baseline_image, 'Sharpened Baseline Image')
-
     baselines = cluster(baseline_image)
 
     new_baseline_image = draw_new_image(baselines, Image.fromarray(original_image).size)
-
-    plot_image(new_baseline_image, 'New Baseline Image')
 
     columns = sort_lines(baselines, original_image.shape)
 

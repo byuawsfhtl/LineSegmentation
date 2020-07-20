@@ -69,10 +69,11 @@ def segment_from_predictions_without_seam(original_image, baseline_prediction, f
             baseline = baselines[index]
 
             upper_polyline, lower_polyline = [], []
+            upper_polyline_found, lower_polyline_found = [], []
 
             for point in baseline:
-                above_point, found = search_up(point, new_baseline_image, max_height=int(max_above / .7))
-                if not found:
+                above_point, above_found = search_up(point, new_baseline_image, max_height=int(max_above / .7))
+                if not above_found:
                     above_space = max_above
                 else:
                     above_space = int((point[0] - above_point[1]) * 0.7)
@@ -81,20 +82,23 @@ def segment_from_predictions_without_seam(original_image, baseline_prediction, f
                     upper_point_y = 0
                 upper_point_x = point[1]
 
-                below_point, found = search_down(point, new_baseline_image, max_height=int(max_below / .4))
-                if not found:
+                below_point, below_found = search_down(point, new_baseline_image, max_height=int(max_below / .4))
+                if not below_found:
                     below_space = max_below
-                    print('Not Found!')
                 else:
                     below_space = int((below_point[1] - point[0]) * 0.4)
-                print(max_below)
                 lower_point_y = point[0] + below_space
                 if lower_point_y >= original_image.shape[0]:
                     lower_point_y = original_image.shape[0] - 1
                 lower_point_x = point[1]
 
+                upper_polyline_found.append(above_found)
+                lower_polyline_found.append(below_found)
                 upper_polyline.append((upper_point_x, upper_point_y))
                 lower_polyline.append((lower_point_x, lower_point_y))
+
+            upper_polyline = clean_seam(upper_polyline, upper_polyline_found)
+            lower_polyline = clean_seam(lower_polyline, lower_polyline_found)
 
             polygon = np.concatenate((upper_polyline, lower_polyline[::-1]))
 
@@ -239,26 +243,38 @@ def cluster(image, min_points=50):
                 current = point[1]
         nms_clusters.append(c_cluster)
 
+    # # Perform non-maximum suppression so we only have one point per column
+    # nms_clusters = []
+    # for c in clusters:  # For each cluster
+    #     median_list = []
+    #     c_cluster = []
+    #     current = c[0][1]
+    #     for point in c:  # For each point in a cluster
+    #         if point[1] > current:
+    #             c_cluster.append((int(np.median(median_list)), current))
+    #             current = point[1]
+    #             median_list = []
+    #         median_list.append(point[0])
+    #     c_cluster.append((int(np.median(median_list)), current))
+    #
+    #     nms_clusters.append(c_cluster)
+
     # Filter out minimum points
     nms_clusters = list(filter(lambda cl: len(cl) > min_points, nms_clusters))
-    #
-    # print('Length:', len(nms_clusters[0]))
-    #
-    # for nms_cluster in nms_clusters:
-    #     first_x_point = nms_cluster[0][1] - 20
-    #     if first_x_point < 0:
-    #         first_x_point = 0
-    #     first_point = (nms_cluster[0][0], first_x_point)
-    #
-    #     last_x_point = nms_cluster[-1][1] + 20
-    #     if last_x_point >= image.shape[1]:
-    #         last_x_point = image.shape[1] - 1
-    #     last_point = (nms_cluster[-1][0], last_x_point)
-    #
-    #     nms_cluster.insert(0, first_point)
-    #     nms_cluster.append(last_point)
-    #
-    # print('Length:', len(nms_clusters[0]))
+
+    for nms_cluster in nms_clusters:
+        first_x_point = nms_cluster[0][1] - 5
+        if first_x_point < 0:
+            first_x_point = 0
+        first_point = (nms_cluster[0][0], first_x_point)
+
+        last_x_point = nms_cluster[-1][1] + 5
+        if last_x_point >= image.shape[1]:
+            last_x_point = image.shape[1] - 1
+        last_point = (nms_cluster[-1][0], last_x_point)
+
+        nms_cluster.insert(0, first_point)
+        nms_cluster.append(last_point)
 
     return nms_clusters
 

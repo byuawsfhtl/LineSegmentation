@@ -98,7 +98,8 @@ def segment_from_predictions_without_seam(original_image, baseline_prediction, f
 
             polygon = np.concatenate((upper_polyline, lower_polyline[::-1]))
 
-            segment, segment_baseline = segment_from_polygon(Polygon(polygon), Image.fromarray(original_image), baseline)
+            segment, segment_baseline = segment_from_polygon(Polygon(polygon), Image.fromarray(original_image),
+                                                             baseline)
             dewarped_segment = dewarp(segment, segment_baseline)
             final_segment = final_crop(dewarped_segment)
 
@@ -456,14 +457,14 @@ def dewarp(img, baseline):
 
     # Find the median y point on the baseline
     baseline_y = [point[0] for point in baseline]
-    baseline_median = np.median(baseline_y)
+    median = np.median(baseline_y)
 
     for point in baseline:
         # The x-coordinate represents a column in the image
         column = int(point[1])
 
         # Calculate the shift based on the difference between the y-coordinate and the median
-        shift = int(baseline_median - point[0])
+        shift = int(median - point[0])
 
         # Shift the column up or down depending on the difference calculated
         shift_column(img_copy, column, shift)
@@ -585,9 +586,6 @@ def sort_lines(lines, img_shape, num_columns=2, kernel_size=10):
 #     if lower_y_point >= original_image.shape[0]:
 #         lower_y_point = original_image.shape[0] - 1
 #     lower_polyline.append((lower_x_point, lower_y_point))
-
-
-
 
 #
 # above_line = baselines[index - 1] if index != 0 else []

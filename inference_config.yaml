@@ -1,0 +1,14 @@
+# The path to the directory of images to be inferred
+img_path: ./data/test_images4
+# The path to the directory that segmented line snippets will be stored
+out_path: ./data/out/french
+# The path to the pre-trained model weights
+model_in: ./data/model_weights/french_model/run1
+# The size which all images will be resized for inference
+img_size: (1024, 1536)
+# The size of the mini-batch used during inference
+batch_size: 1
+# How many columns along the baseline to look at when searching the image to find the bounding polygon
+seg_step_size: 1
+# Whether or not each text line snippet be shown to the screen during inference (used for debugging segmentation)
+plot_imgs: False

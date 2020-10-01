@@ -2,11 +2,19 @@ import sys
 
 import tensorflow as tf
 from tqdm import tqdm
+import yaml
 
+import lineseg.dataset as ds
 from lineseg.model import ARUNet
-from lineseg.dataset.sequence import LineSequence
-from lineseg.util.arguments import IArg, InfArgParser
 from lineseg.seg import segment_from_predictions_without_seam
+
+IMG_PATH = 'img_path'
+OUT_PATH = 'out_path'
+MODEL_IN = 'model_in'
+IMG_SIZE = 'img_size'
+BATCH_SIZE = 'batch_size'
+SEG_STEP_SIZE = 'seg_step_size'
+PLOT_IMGS = 'plot_imgs'
 
 
 def inference(cmd_args):
@@ -29,34 +37,34 @@ def inference(cmd_args):
     :param cmd_args: Command line arguments
     :return: None
     """
+    # Ensure the inference config file is included
+    if len(cmd_args) == 0:
+        print('Must include path to inference config file. The default file is included as inference_config.yaml')
+        return
 
-    # Parse command line arguments and make them accessible in the args object
-    args = InfArgParser(cmd_args)
-    args.parse()
-
-    # Create Keras sequence to load data
-    sequence = LineSequence(args[IArg.IMG_PATH])
+    # Read arguments from the config file
+    with open(cmd_args[0]) as f:
+        configs = yaml.load(f, Loader=yaml.FullLoader)
 
     # Create our ARU-Net Models
-    baseline_model = ARUNet()
-    # seam_model = ARUNet()
+    model = ARUNet()
 
     # Load the pre-trained model weights
-    baseline_model.load_weights(args[IArg.WEIGHTS_PATH_BASELINE])
-    # seam_model.load_weights(args[IArg.WEIGHTS_PATH_SEAM])
+    model.load_weights(configs[MODEL_IN])
+
+    dataset = ds.get_encoded_inference_dataset_from_img_path(configs[IMG_PATH], eval(configs[IMG_SIZE]))\
+        .batch(configs[BATCH_SIZE])
+    dataset_size = tf.data.experimental.cardinality(dataset).numpy()
 
     # Iterate through each of the images and perform inference
-    for img_orig, img_norm, img_name in tqdm(sequence):
-        baseline_prediction = baseline_model(tf.expand_dims(img_norm, 0), training=False)
-        # seam_prediction = seam_model(tf.expand_dims(img, 0), training=False)
-
-        segment_from_predictions_without_seam(img_orig, baseline_prediction, img_name,
-                                              plot_images=eval(args[IArg.SHOULD_PLOT_IMAGES]),
-                                              save_path=args[IArg.OUT_PATH])
-
-        # segment_from_predictions(img, baseline_prediction, seam_prediction, img_name,
-        #                          int(args[IArg.SEGMENTATION_STEP_SIZE]),
-        #                          plot_images=eval(args[IArg.SHOULD_PLOT_IMAGES]), save_path=args[IArg.OUT_PATH])
+    inference_loop = tqdm(total=dataset_size, position=0, leave=True)
+    for img, img_name in dataset:
+        print('IMG SHAPE:', img.shape)
+        std_img = tf.image.per_image_standardization(img)  # The inference dataset doesn't standardize the image input
+        baseline_prediction = model(std_img, training=True)
+        segment_from_predictions_without_seam(img, baseline_prediction, img_name, plot_images=configs[PLOT_IMGS],
+                                              save_path=configs[OUT_PATH])
+        inference_loop.update(1)
 
     print('Finished performing inference.')
 

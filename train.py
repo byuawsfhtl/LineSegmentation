@@ -1,41 +1,39 @@
 import sys
 
+import tensorflow as tf
 from matplotlib import pyplot as plt
+import yaml
 
-from lineseg.dataset.sequence import LineSequence
-from lineseg.dataset.tfrecord import create_tfrecord_from_sequence
+import lineseg.dataset as ds
 from lineseg.training import ModelTrainer
-from lineseg.util.arguments import TArg, TrainArgParser
 
-
-def show_graph(train_metric, val_metric, title):
-    """
-    Creates a graph showing a given metric over time
-
-    :param train_metric:  list of the given metric on the training set per epoch
-    :param val_metric: list of the given metric on the validation set per epoch
-    :param title: the metric type which will be used for the title and y-axis label
-    :return: None
-    """
-    plt.title(title)
-    plt.xlabel('Epochs')
-    plt.ylabel(title)
-    plt.plot(train_metric, label='Train')
-    plt.plot(val_metric, label='Val')
-    plt.legend()
-    plt.show()
+# Define the string names of all configuration arguments
+TRAIN_CSV_PATH = 'train_csv_path'
+VAL_CSV_PATH = 'val_csv_path'
+SPLIT_TRAIN = 'split_train'
+TRAIN_SIZE = 'train_size'
+MODEL_OUT = 'model_out'
+MODEL_IN = 'model_in'
+IMG_SIZE = 'img_size'
+EPOCHS = 'epochs'
+BATCH_SIZE = 'batch_size'
+LEARNING_RATE = 'learning_rate'
+SHOW_GRAPHS = 'show_graphs'
+SAVE_EVERY = 'save_every'
+SHUFFLE_SIZE = 'shuffle_size'
 
 
 def train_model(cmd_args):
     """
     Train the model according to the parameters given
 
-    python train.py --img_path <IMG_PATH> --label_path <IMG_LABEL_PATH> --model_out <WEIGHTS_OUT_PATH>
-                    --img_resize <(HEIGHT, WIDTH) AS TUPLE> --epochs <NUM_EPOCHS> --batch_size <BATCH_SIZE>
-                    --weights_path <WEIGHTS_IN_PATH> --learning_rate <LEARNING_RATE> --train_size <TRAIN_SET_SPLIT_SIZE>
-                    --tfrecord_out <TFRECORD_OUT_PATH> --graphs <TRUE/FALSE> --save_best_after <SAVE_AFTER_NUM_EPOCH>
+    python train.py <TRAIN_CONFIGURATION_FILE>
 
     Command Line Arguments:
+    * train_configuration_file: The path to the train configuration file. An example config file is
+                                given as "train_config.yaml"
+
+    Configuration File Arguments:
     * img_path (required): The path to the images in the dataset
     * label_path (required): The path to the ground truth image labels in the dataset
     * model_out (required): The path to store the model weights
@@ -58,35 +56,48 @@ def train_model(cmd_args):
     :return: None
     """
 
-    # Parse the command line arguments so that they can be accessible from the newly created args object
-    args = TrainArgParser(cmd_args)
-    args.parse()
+    # Ensure the train config file is included
+    if len(cmd_args) == 0:
+        print('Must include path to train config file. The default file is includes as train_config.yaml')
+        return
 
-    # Create a Keras Sequence so that we can access data
-    sequence = LineSequence(args[TArg.IMG_PATH], args[TArg.LABEL_PATH])
+    # Read arguments from the config file
+    with open(cmd_args[0]) as f:
+        configs = yaml.load(f, Loader=yaml.FullLoader)
 
-    # Create a tfrecord from the created sequence. This will speed up training dramatically
-    if args[TArg.TFRECORD_IN_PATH] is None:
-        create_tfrecord_from_sequence(sequence, args[TArg.TFRECORD_OUT_PATH])
-        tfrecord_path = args[TArg.TFRECORD_OUT_PATH]
-    # A tfrecord_in path has already been specified. Use this one...
-    else:
-        tfrecord_path = args[TArg.TFRECORD_IN_PATH]
+    # Print available devices so we know if we are using CPU or GPU
+    tf.print('Devices Available:', tf.config.list_physical_devices())
 
-    # Get the respective sizes for the dataset splits
-    dataset_size = len(sequence)
-    train_dataset_size = int(float(args[TArg.TRAIN_SIZE]) * dataset_size)
-    val_dataset_size = dataset_size - train_dataset_size
+    # Create train/validation dataset depending on configuration settings
+    # Split the train dataset based on the TRAIN_SIZE parameter
+    if configs[SPLIT_TRAIN]:
+        dataset_size = ds.get_dataset_size(configs[TRAIN_CSV_PATH])
+        train_dataset_size = int(configs[TRAIN_SIZE] * dataset_size)
+        val_dataset_size = dataset_size - train_dataset_size
+
+        dataset = ds.get_encoded_dataset_from_csv(configs[TRAIN_CSV_PATH], eval(configs[IMG_SIZE]))
+        train_dataset = dataset.take(train_dataset_size)\
+                               .shuffle(configs[SHUFFLE_SIZE], reshuffle_each_iteration=True)\
+                               .batch(configs[BATCH_SIZE])
+        val_dataset = dataset.take(val_dataset_size)\
+                             .batch(configs[BATCH_SIZE])
+    else:  # Use the data as given in the train/validation csv files - no additional splits performed
+        train_dataset_size = ds.get_dataset_size(configs[TRAIN_CSV_PATH])
+        val_dataset_size = ds.get_dataset_size(configs[VAL_CSV_PATH])
+
+        train_dataset = ds.get_encoded_dataset_from_csv(configs[TRAIN_CSV_PATH], eval(configs[IMG_SIZE]))\
+            .shuffle(configs[SHUFFLE_SIZE])\
+            .batch(configs[BATCH_SIZE])
+        val_dataset = ds.get_encoded_dataset_from_csv(configs[VAL_CSV_PATH], eval(configs[IMG_SIZE]))\
+            .batch(configs[BATCH_SIZE])
 
     # Create the trainer object and load in configuration settings
-    train = ModelTrainer(epochs=int(args[TArg.EPOCHS]), batch_size=int(args[TArg.BATCH_SIZE]),
-                         dataset_path=tfrecord_path, train_dataset_size=train_dataset_size,
-                         val_dataset_size=val_dataset_size, save_path=args[TArg.MODEL_OUT],
-                         lr=float(args[TArg.LEARNING_RATE]), weights_path=args[TArg.WEIGHTS_PATH],
-                         save_best_after=int(args[TArg.SAVE_BEST_AFTER]))
+    trainer = ModelTrainer(configs[EPOCHS], configs[BATCH_SIZE], train_dataset, train_dataset_size, val_dataset,
+                           val_dataset_size, configs[MODEL_OUT], configs[MODEL_IN], lr=configs[LEARNING_RATE],
+                           save_every=configs[SAVE_EVERY])
 
     # Train the model
-    model, losses, ious = train()
+    model, losses, ious = trainer.train()
 
     # Print the losses, intersection over union over the course of training
     print('Train Losses:', losses[0])
@@ -95,11 +106,27 @@ def train_model(cmd_args):
     print('Val IoU:', ious[1])
 
     # Show the graphs if specified by the user
-    if eval(args[TArg.SHOW_GRAPHS]):
+    if configs[SHOW_GRAPHS]:
         show_graph(losses[0], losses[1], 'Loss')
         show_graph(ious[0], ious[1], 'IoU')
 
-    print('Finished Training.')
+
+def show_graph(train_metric, val_metric, title):
+    """
+    Creates a graph showing a given metric over time
+
+    :param train_metric:  list of the given metric on the training set per epoch
+    :param val_metric: list of the given metric on the validation set per epoch
+    :param title: the metric type which will be used for the title and y-axis label
+    :return: None
+    """
+    plt.title(title)
+    plt.xlabel('Epochs')
+    plt.ylabel(title)
+    plt.plot(train_metric, label='Train')
+    plt.plot(val_metric, label='Val')
+    plt.legend()
+    plt.show()
 
 
 if __name__ == '__main__':

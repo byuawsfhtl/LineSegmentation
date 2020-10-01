@@ -16,5 +16,5 @@ setup(
     author='BYU-Handwriting-Lab',
     keywords='BYU segmentation line handwriting recognition',
     packages=find_packages(),
-    install_requires=['tensorflow', 'pillow', 'scikit-learn', 'tqdm', 'matplotlib', 'shapely', 'numpy']
+    install_requires=['tensorflow', 'pandas', 'pyyaml', 'scikit-learn', 'tqdm', 'matplotlib', 'shapely', 'numpy']
 )

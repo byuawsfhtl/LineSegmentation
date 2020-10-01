@@ -2,7 +2,6 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from lineseg.model import ARUNet
-from lineseg.dataset.tfrecord import read_tfrecord
 
 
 def augment(img, label):
@@ -30,44 +29,42 @@ def augment(img, label):
 
 class ModelTrainer:
     """
-    ModelTrainer
-
     Responsible for training the model. Scope becomes an issues when dealing with @tf.function.
     It's easier to place all of the training code into an object so we don't run into issues.
     Once the object is created, the __call__ method will train and return the results and the
     trained model.
     """
 
-    def __init__(self, epochs, batch_size, dataset_path, train_dataset_size, val_dataset_size, save_path,
-                 lr=1e-3, weights_path=None, save_best_after=25, shuffle_size=10):
+    def __init__(self, epochs, batch_size, train_dataset, train_dataset_size, val_dataset, val_dataset_size, model_out,
+                 model_in=None, lr=1e-3, save_every=5):
         """
         Set up the necessary variables that will be used during training, including the model, optimizer,
         encoder, and other metrics.
 
         :param epochs: The number of epochs to train the model
         :param batch_size: How many images will be included in a mini-batch
-        :param dataset_path: The path to the TfRecord dataset
+        :param train_dataset:
         :param train_dataset_size: The size of the train dataset
+        :param val_dataset:
         :param val_dataset_size: The size of the val dataset
         :param lr: The learning rate
-        :param weights_path: The path to the weights if we are starting from a pre-trained model
-        :param save_best_after: Save model weights (if it achieved best IoU) after how many epochs?
+        :param model_out: The path to the weights if we are starting from a pre-trained model
+        :param model_in: The path to the weights of a pre-trained model that will be applied to the model prior to train
+        :param save_every: The frequency which the model weights will be saved during training
         """
         self.epochs = epochs
         self.batch_size = batch_size
+        self.train_dataset = train_dataset
         self.train_dataset_size = train_dataset_size
+        self.val_dataset = val_dataset
         self.val_dataset_size = val_dataset_size
-        self.save_path = save_path
-        self.save_best_after = save_best_after
-
-        self.dataset = tf.data.TFRecordDataset(dataset_path).map(read_tfrecord)
-        self.train_dataset = self.dataset.take(train_dataset_size).shuffle(shuffle_size, reshuffle_each_iteration=True)\
-                                         .map(augment).batch(self.batch_size)
-        self.val_dataset = self.dataset.skip(train_dataset_size).batch(self.batch_size)
+        self.model_out = model_out
+        self.model_in = model_in
+        self.save_every = save_every
 
         self.model = ARUNet()
-        if weights_path is not None:
-            self.model.load_weights(weights_path)
+        if model_in is not None:
+            self.model.load_weights(model_in)
 
         self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
@@ -103,6 +100,14 @@ class ModelTrainer:
         self.train_loss(loss)
         self.train_iou(labels, tf.argmax(predictions, axis=3))
 
+    def save_model(self):
+        """
+        Saves the model weights to the specified "model_out" path
+        :return: None
+        """
+        print('Saving Model Weights to', self.model_out)
+        self.model.save_weights(self.model_out)
+
     @tf.function
     def val_step(self, images, labels):
         """
@@ -119,7 +124,7 @@ class ModelTrainer:
         self.val_loss(loss)
         self.val_iou(labels, tf.argmax(predictions, axis=3))
 
-    def __call__(self):
+    def train(self):
         """
         Main Training Loop
 
@@ -129,8 +134,6 @@ class ModelTrainer:
         :return: Trained Model, (Train-Loss over time, Validation-Loss over time),
                  (Train-IoU over time, Validation-IoU over time)
         """
-        best_val_iou = 0.0
-
         train_losses, val_losses = [], []
         train_ious, val_ious = [], []
 
@@ -166,12 +169,20 @@ class ModelTrainer:
                 val_ious.append(self.val_iou.result().numpy())
 
                 # Only save the model if the validation IoU is greater than anything we've seen
-                if val_ious[-1] > best_val_iou and epoch >= self.save_best_after - 1:
-                    best_val_iou = val_ious[-1]
-                    self.model.save_weights(self.save_path)
-                    tf.print('\nSaving model to', self.save_path, '. Val:', best_val_iou)
+                if epoch % self.save_every == self.save_every - 1:
+                    self.save_model()
 
         except Exception as e:
             print('Exception caught during training: {0}'.format(e))
         finally:
+            print('Finished Training')
+            self.save_model()
             return self.model, (train_losses, val_losses), (train_ious, val_ious)
+
+    def __call__(self):
+        """
+        Calls self.train() method which contains main training loop.
+
+        :return The model, train/val losses as tuple, train/val ious as tuple
+        """
+        return self.train()

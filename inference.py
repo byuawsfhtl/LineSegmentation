@@ -6,7 +6,7 @@ import yaml
 
 import lineseg.dataset as ds
 from lineseg.model import ARUNet
-from lineseg.seg import segment_from_predictions_without_seam
+from lineseg.seg import segment_from_predictions
 
 IMG_PATH = 'img_path'
 OUT_PATH = 'out_path'
@@ -21,18 +21,21 @@ def inference(cmd_args):
     """
     Perform inference on images specified by the user
 
-    python inference.py <ARGS> ...
+    python inference.py <INFERENCE_CONFIG_FILE>
 
     Command Line Arguments:
-    * img_path (required): The path to the images to be inferred
-    * out_path (required): The path to the results of the inference (text-line snippets)
-    * weights_path_baseline (required): The path to the pre-trained model weights for baselines
-    * weights_path_seam (required): The path to the pre-trained model weights for seams
-    * seg_step_size (optional): How many columns along the baseline to look at when searching the seam image to find
-                                the bounding polygon (default: 1)
-    * plot (optional): Should each text line snippet be shown to the screen during inference? (default: False)
-    * image_resize (optional): The height and width for resizing the image when sent into the model for inference
-                               (default: 768, 1152)
+    * INFERENCE_CONFIG_FILE (required): The path to the inference configuration file. An inference configuration
+      file is provided as "inference_config.yaml".
+
+    Configuration File Arguments:
+    * img_path: The path to the images to be inferred
+    * out_path: The path to the results of the inference (text-line snippets)
+    * model_in: The path to the pre-trained model weights
+    * img_size: The height and width for resizing the image when sent into the model for inference
+                (default: 768, 1152)
+    * seg_step_size: How many columns along the baseline to look at when searching the seam image to find
+                     the bounding polygon (default: 1)
+    * plot_imgs: Should each text line snippet be shown to the screen during inference? (default: False)
 
     :param cmd_args: Command line arguments
     :return: None
@@ -52,18 +55,16 @@ def inference(cmd_args):
     # Load the pre-trained model weights
     model.load_weights(configs[MODEL_IN])
 
-    dataset = ds.get_encoded_inference_dataset_from_img_path(configs[IMG_PATH], eval(configs[IMG_SIZE]))\
-        .batch(configs[BATCH_SIZE])
+    dataset = ds.get_encoded_inference_dataset_from_img_path(configs[IMG_PATH], eval(configs[IMG_SIZE]))
     dataset_size = tf.data.experimental.cardinality(dataset).numpy()
 
     # Iterate through each of the images and perform inference
     inference_loop = tqdm(total=dataset_size, position=0, leave=True)
     for img, img_name in dataset:
-        print('IMG SHAPE:', img.shape)
         std_img = tf.image.per_image_standardization(img)  # The inference dataset doesn't standardize the image input
-        baseline_prediction = model(std_img, training=True)
-        segment_from_predictions_without_seam(img, baseline_prediction, img_name, plot_images=configs[PLOT_IMGS],
-                                              save_path=configs[OUT_PATH])
+        baseline_prediction = model(tf.expand_dims(std_img, 0), training=True)
+        segment_from_predictions(img, baseline_prediction, str(img_name.numpy(), 'utf-8'),
+                                 plot_images=configs[PLOT_IMGS], save_path=configs[OUT_PATH])
         inference_loop.update(1)
 
     print('Finished performing inference.')

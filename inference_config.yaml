@@ -11,4 +11,4 @@ batch_size: 1
 # How many columns along the baseline to look at when searching the image to find the bounding polygon
 seg_step_size: 1
 # Whether or not each text line snippet be shown to the screen during inference (used for debugging segmentation)
-plot_imgs: False
+plot_imgs: True

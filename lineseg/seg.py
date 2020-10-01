@@ -9,33 +9,8 @@ from shapely.geometry import Polygon
 from scipy.ndimage.filters import median_filter
 
 
-def baseline_median(baseline):
-    baseline_y = [point[0] for point in baseline]
-    return np.median(baseline_y)
-
-
-def get_y_at_x(baseline, x):
-    for point in baseline:
-        if point[1] == x:
-            return point[0]
-
-    return None
-
-
-def draw_new_image(baselines, img_size):
-    img = Image.new('1', img_size, 0)
-    draw = ImageDraw.Draw(img)
-
-    for baseline in baselines:
-        baseline = [(point[1], point[0]) for point in baseline]
-        draw.line(baseline, fill=1, width=1)
-
-    return np.array(img)
-
-
-def segment_from_predictions_without_seam(original_image, baseline_prediction, filename, save_images=True,
-                                          plot_images=False, save_path='./data/out/snippets', max_above=25,
-                                          max_below=15):
+def segment_from_predictions(original_image, baseline_prediction, filename, save_images=True, plot_images=False,
+                             save_path='./data/out/snippets', max_above=25, max_below=15):
     """
     Produce line-level segmentations based on the baseline prediction and write the segments to the specified path.
 
@@ -56,9 +31,11 @@ def segment_from_predictions_without_seam(original_image, baseline_prediction, f
 
     baselines = cluster(baseline_image)
 
+    original_image = original_image * 255
+    original_image = original_image.astype(np.uint8)
     new_baseline_image = draw_new_image(baselines, Image.fromarray(original_image).size)
 
-    columns = sort_lines(baselines, original_image.shape)
+    columns = sort_lines(baselines, original_image.shape[0:2])
 
     for col_index, baselines in enumerate(columns):
         for index in range(len(baselines)):
@@ -111,73 +88,15 @@ def segment_from_predictions_without_seam(original_image, baseline_prediction, f
                 plot_image(final_segment, snippet_name)
 
 
-def segment_from_predictions(original_image, baseline_prediction, seam_prediction, filename, step_size=1,
-                             save_images=True, plot_images=False, save_path='./data/out/snippets'):
-    """
-    Segment the baseline and seam predictions and write the segments to the specified path.
+def draw_new_image(baselines, img_size):
+    img = Image.new('1', img_size, 0)
+    draw = ImageDraw.Draw(img)
 
-    :param original_image: The original image to be segmented
-    :param baseline_prediction: The predicted baselines (ARU-Net output)
-    :param seam_prediction: The predicted seams (ARU-Net output)
-    :param filename: The name of the file that is being segmented
-    :param step_size: How many columns along the baseline to look at when searching the seam image to find
-                      the bounding polygon
-    :param save_images: Whether or not to save the images that are segmented
-    :param plot_images: Whether or not to plot the images that are segmented
-    :param save_path: The path to save the images to
-    :return: None
-    """
-    original_image = tf.squeeze(original_image).numpy()
-    baseline_image = tf.squeeze(tf.argmax(baseline_prediction, axis=3)).numpy()
-    seam_image = tf.squeeze(tf.argmax(seam_prediction, axis=3)).numpy()
-    # baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
-    # seam_image = tf.squeeze(seam_prediction[:, :, :, 1])
-
-    # baseline_image = sharpen_image(baseline_image)
-    # seam_image = sharpen_image(seam_image)
-
-    baselines = cluster(baseline_image)
-    baselines = sort_lines(baselines, original_image.shape)
-
-    # Search the cleaned-up seam image for upper/lower seams
-    # Create a polygon around the line based on the seam data
-    polygons = []
     for baseline in baselines:
-        seam_top = []
-        seam_top_founds = []
-        seam_bottom = []
-        seam_bottom_founds = []
-        for index, point in enumerate(baseline):
-            if index % step_size == 0:
-                seam_top_point, seam_top_found = search_up(point, seam_image)
-                seam_bottom_point, seam_bottom_found = search_down(point, seam_image)
+        baseline = [(point[1], point[0]) for point in baseline]
+        draw.line(baseline, fill=1, width=1)
 
-                seam_top.append(seam_top_point)
-                seam_bottom.append(seam_bottom_point)
-
-                seam_top_founds.append(seam_top_found)
-                seam_bottom_founds.append(seam_bottom_found)
-
-        seam_top_clean = clean_seam(seam_top, seam_top_founds)
-        seam_bottom_clean = clean_seam(seam_bottom, seam_bottom_founds)
-
-        if len(seam_top_clean) != 0 and len(seam_bottom_clean) != 0:
-            polygons.append(np.concatenate((seam_top_clean, seam_bottom_clean[::-1])))
-
-    # Iterate over all baselines/polygons - segment, dewarp, and crop
-    for index, (poly, baseline) in enumerate(zip(polygons, baselines)):
-        segment, segment_baseline = segment_from_polygon(Polygon(poly),
-                                                         Image.fromarray(np.invert(original_image.astype(np.uint8))),
-                                                         baseline)
-        dewarped_segment = dewarp(segment, segment_baseline)
-        final_segment = final_crop(dewarped_segment)
-
-        snippet_name = filename + '_' + str(index) + '.jpg'
-
-        if save_images:
-            save_image(final_segment, save_path, snippet_name)
-        if plot_images:
-            plot_image(final_segment, snippet_name)
+    return np.array(img)
 
 
 def sharpen_image(image_prediction, thresh=.1, filter_sizes=(3, 3)):
@@ -241,22 +160,6 @@ def cluster(image, min_points=50):
                 c_cluster.append(point)
                 current = point[1]
         nms_clusters.append(c_cluster)
-
-    # # Perform non-maximum suppression so we only have one point per column
-    # nms_clusters = []
-    # for c in clusters:  # For each cluster
-    #     median_list = []
-    #     c_cluster = []
-    #     current = c[0][1]
-    #     for point in c:  # For each point in a cluster
-    #         if point[1] > current:
-    #             c_cluster.append((int(np.median(median_list)), current))
-    #             current = point[1]
-    #             median_list = []
-    #         median_list.append(point[0])
-    #     c_cluster.append((int(np.median(median_list)), current))
-    #
-    #     nms_clusters.append(c_cluster)
 
     # Filter out minimum points
     nms_clusters = list(filter(lambda cl: len(cl) > min_points, nms_clusters))
@@ -532,7 +435,6 @@ def sort_lines(lines, img_shape, num_columns=2, kernel_size=10):
     :param kernel_size: The kernel size used when scanning for baselines from top-down
     :return: The sorted lines
     """
-
     height, width = img_shape
 
     col_step = width // num_columns
@@ -556,70 +458,3 @@ def sort_lines(lines, img_shape, num_columns=2, kernel_size=10):
         columns_list.append(column_lines)
 
     return columns_list
-
-# above_line_med = medians[index - 1] if index != 0 else None
-# current_line_med = medians[index]
-# below_line_med = medians[index + 1] if index + 1 != len(baselines) else None
-#
-# if above_line_med is not None:
-#     above_space = int((current_line_med - above_line_med) * .6)
-# else:
-#     above_space = max_above
-#
-# if below_line_med is not None:
-#     below_space = int((below_line_med - current_line_med) * .4)
-# else:
-#     below_space = max_below
-#
-# baseline = baselines[index]
-# upper_polyline = []
-# lower_polyline = []
-# for point in baseline:
-#     upper_y_point = point[0] - above_space
-#     upper_x_point = point[1]
-#     if upper_y_point < 0:
-#         upper_y_point = 0
-#     upper_polyline.append((upper_x_point, upper_y_point))
-#
-#     lower_y_point = point[0] + below_space
-#     lower_x_point = point[1]
-#     if lower_y_point >= original_image.shape[0]:
-#         lower_y_point = original_image.shape[0] - 1
-#     lower_polyline.append((lower_x_point, lower_y_point))
-
-#
-# above_line = baselines[index - 1] if index != 0 else []
-#             baseline = baselines[index]
-#             below_line = baselines[index + 1] if index + 1 != len(baselines) else []
-#
-#             lower_polyline = []
-#             upper_polyline = []
-#             for point in baseline:
-#                 above_line_y = get_y_at_x(above_line, point[1])
-#                 if above_line_y is None and len(above_line) == 0:
-#                     above_space = max_above
-#                 elif above_line_y is None:
-#                     above_space = int((point[0] - baseline_median(above_line)) * .7)
-#                 else:
-#                     above_space = int((point[0] - above_line_y) * .7)
-#
-#                 below_line_y = get_y_at_x(below_line, point[1])
-#                 if below_line_y is None and len(below_line) == 0:
-#                     below_space = max_below
-#                 elif below_line_y is None:
-#                     below_space = int((baseline_median(below_line) - point[0]) * .4)
-#                 else:
-#                     below_space = int((below_line_y - point[0]) * .4)
-#
-#                 upper_y = point[0] - above_space
-#                 upper_x = point[1]
-#                 if upper_y < 0:
-#                     upper_y = 0
-#
-#                 lower_y = point[0] + below_space
-#                 lower_x = point[1]
-#                 if lower_y >= original_image.shape[0]:
-#                     lower_y = original_image.shape[0] - 1
-#
-#                 upper_polyline.append((upper_x, upper_y))
-#                 lower_polyline.append((lower_x, lower_y))

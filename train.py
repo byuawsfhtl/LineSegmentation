@@ -93,7 +93,7 @@ def train_model(cmd_args):
 
     # Create the trainer object and load in configuration settings
     trainer = ModelTrainer(configs[EPOCHS], configs[BATCH_SIZE], train_dataset, train_dataset_size, val_dataset,
-                           val_dataset_size, configs[MODEL_OUT], configs[MODEL_IN], lr=configs[LEARNING_RATE],
+                           val_dataset_size, configs[MODEL_OUT], model_in=configs[MODEL_IN], lr=configs[LEARNING_RATE],
                            save_every=configs[SAVE_EVERY])
 
     # Train the model

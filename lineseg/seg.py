@@ -9,17 +9,17 @@ from shapely.geometry import Polygon
 from scipy.ndimage.filters import median_filter
 
 
-def segment_from_predictions(original_image, baseline_prediction, filename, save_images=True, plot_images=False,
-                             save_path='./data/out/snippets', max_above=25, max_below=15):
+def segment_from_predictions(original_image, baseline_prediction, filename, save_path, save_images=True,
+                             plot_images=False, max_above=25, max_below=15):
     """
     Produce line-level segmentations based on the baseline prediction and write the segments to the specified path.
 
     :param original_image:
     :param baseline_prediction:
     :param filename:
+    :param save_path:
     :param save_images:
     :param plot_images:
-    :param save_path:
     :param max_above:
     :param max_below:
     :return:

@@ -1,4 +1,5 @@
 import sys
+import os
 
 import tensorflow as tf
 from tqdm import tqdm
@@ -11,6 +12,8 @@ from lineseg.seg import segment_from_predictions
 IMG_PATH = 'img_path'
 OUT_PATH = 'out_path'
 MODEL_IN = 'model_in'
+SAVE_RAW = 'save_raw'
+RAW_PATH = 'raw_path'
 IMG_SIZE = 'img_size'
 BATCH_SIZE = 'batch_size'
 SEG_STEP_SIZE = 'seg_step_size'
@@ -63,8 +66,16 @@ def inference(cmd_args):
     for img, img_name in dataset:
         std_img = tf.image.per_image_standardization(img)  # The inference dataset doesn't standardize the image input
         baseline_prediction = model(tf.expand_dims(std_img, 0), training=True)
-        segment_from_predictions(img, baseline_prediction, str(img_name.numpy(), 'utf-8'),
-                                 plot_images=configs[PLOT_IMGS], save_path=configs[OUT_PATH])
+
+        # Save the raw model output if specified in configuration file
+        if configs[SAVE_RAW]:
+            pred = tf.squeeze(tf.argmax(baseline_prediction, 3))
+            encoded = tf.image.encode_jpeg(tf.expand_dims(tf.cast(pred, tf.uint8), 2))
+            tf.io.write_file(os.path.join(configs[RAW_PATH], str(img_name.numpy(), 'utf-8') + '.jpg'), encoded)
+
+        # Segment lines based on the output of the model and save individual line snippets to the given out path
+        segment_from_predictions(img, baseline_prediction, str(img_name.numpy(), 'utf-8'), configs[OUT_PATH],
+                                 plot_images=configs[PLOT_IMGS])
         inference_loop.update(1)
 
     print('Finished performing inference.')

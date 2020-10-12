@@ -209,9 +209,9 @@ class ARUNet(Model):
         self.ru_deconv3 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(8, 8), dropout_rate=dropout_rate)
 
         # Scale 5
-        self.ap4 = kl.AveragePooling2D(pool_size=(2, 2))
-        self.a_deconv4 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(16, 16), dropout_rate=dropout_rate)
-        self.ru_deconv4 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(16, 16), dropout_rate=dropout_rate)
+        # self.ap4 = kl.AveragePooling2D(pool_size=(2, 2))
+        # self.a_deconv4 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(16, 16), dropout_rate=dropout_rate)
+        # self.ru_deconv4 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(16, 16), dropout_rate=dropout_rate)
 
         self.softmax = kl.Softmax(axis=3)
 

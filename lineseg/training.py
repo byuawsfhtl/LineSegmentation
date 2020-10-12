@@ -4,29 +4,6 @@ from tqdm import tqdm
 from lineseg.model import ARUNet
 
 
-def augment(img, label):
-    index = tf.random.uniform([], 0, 4, dtype=tf.int32)
-
-    height = tf.shape(img)[0]
-    width = tf.shape(img)[1]
-
-    if index == 0:
-        img = tf.image.resize(img, (height // 2, width // 2))
-        label = tf.image.resize(label, (height // 2, width // 2))
-    elif index == 1:
-        img = tf.image.resize(img, (height // 2, width))
-        label = tf.image.resize(label, (height // 2, width))
-    elif index == 2:
-        img = tf.image.resize(img, (height, width // 2))
-        label = tf.image.resize(label, (height, width // 2))
-
-    if tf.random.uniform((), 0, 2, dtype=tf.int32) == 0:
-        img = tf.image.flip_left_right(img)
-        label = tf.image.flip_left_right(label)
-
-    return img, label
-
-
 class ModelTrainer:
     """
     Responsible for training the model. Scope becomes an issues when dealing with @tf.function.

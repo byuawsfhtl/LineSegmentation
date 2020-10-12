@@ -86,6 +86,7 @@ def train_model(cmd_args):
         val_dataset_size = ds.get_dataset_size(configs[VAL_CSV_PATH])
 
         train_dataset = ds.get_encoded_dataset_from_csv(configs[TRAIN_CSV_PATH], eval(configs[IMG_SIZE]))\
+            .map(ds.augment)\
             .shuffle(configs[SHUFFLE_SIZE])\
             .batch(configs[BATCH_SIZE])
         val_dataset = ds.get_encoded_dataset_from_csv(configs[VAL_CSV_PATH], eval(configs[IMG_SIZE]))\
@@ -123,6 +124,7 @@ def show_graph(train_metric, val_metric, title):
     plt.title(title)
     plt.xlabel('Epochs')
     plt.ylabel(title)
+
     plt.plot(train_metric, label='Train')
     plt.plot(val_metric, label='Val')
     plt.legend()

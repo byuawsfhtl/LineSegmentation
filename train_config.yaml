@@ -5,14 +5,14 @@ val_csv_path:
 # Whether or not to split the training set into a training and validation set
 split_train: True
 # The split size determining the train/val split (train = split_size, validation = 1 - split_size)
-train_size: 0.9
+train_size: 0.8
 
 # The path for where to store the model weights after training
 model_out: ./data/model_weights/french_model/run1
 # The path to the pre-trained model weights
 model_in:
 # The height and width of the image after it has been resized
-img_size: (1024, 1536)
+img_size: (2048, 3072)
 
 # The number of epochs (times through the training set) to train
 epochs: 5

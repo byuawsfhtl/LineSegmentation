@@ -69,8 +69,8 @@ def inference(cmd_args):
 
         # Save the raw model output if specified in configuration file
         if configs[SAVE_RAW]:
-            pred = tf.squeeze(tf.argmax(baseline_prediction, 3))
-            encoded = tf.image.encode_jpeg(tf.expand_dims(tf.cast(pred, tf.uint8), 2))
+            pred = tf.squeeze(tf.argmax(baseline_prediction, 3))  # Get the most likely class (baseline/non-baseline)
+            encoded = tf.image.encode_jpeg(tf.expand_dims(tf.cast(pred * 255, tf.uint8), 2))  # Convert to jpeg
             tf.io.write_file(os.path.join(configs[RAW_PATH], str(img_name.numpy(), 'utf-8') + '.jpg'), encoded)
 
         # Segment lines based on the output of the model and save individual line snippets to the given out path

@@ -73,6 +73,42 @@ def get_dataset_size(csv_path):
     return len(pd.read_csv(csv_path, sep='\t', header=None, names=['original_path', 'gt_path']))
 
 
+def augment(img, label):
+    """
+    Function to randomly augment an image and a label.
+    Random augmentations:
+    * Reduce height and width by 2x
+    * Reduce height only by 2x
+    * Reduce width only by 2x
+    * Randomly flip image left/right
+    * None
+
+    :param img: The image to be augmented
+    :param label: The label to be augmented
+    :return: The augmented image and label
+    """
+    index = tf.random.uniform([], 0, 4, dtype=tf.int32)
+
+    height = tf.shape(img)[0]
+    width = tf.shape(img)[1]
+
+    if index == 0:
+        img = tf.image.resize(img, (height // 2, width // 2))
+        label = tf.image.resize(label, (height // 2, width // 2))
+    elif index == 1:
+        img = tf.image.resize(img, (height // 2, width))
+        label = tf.image.resize(label, (height // 2, width))
+    elif index == 2:
+        img = tf.image.resize(img, (height, width // 2))
+        label = tf.image.resize(label, (height, width // 2))
+
+    if tf.random.uniform((), 0, 2, dtype=tf.int32) == 0:
+        img = tf.image.flip_left_right(img)
+        label = tf.image.flip_left_right(label)
+
+    return img, label
+
+
 def get_encoded_dataset_from_csv(csv_path, img_size):
     """
     Using the tf.data api, load the desired csv with original and ground-truth data, encode the images for use with

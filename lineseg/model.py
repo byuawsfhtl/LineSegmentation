@@ -259,20 +259,20 @@ class ARUNet(Model):
 
         arunet4_out = tf.math.multiply(anet4_out, runet4_out)
 
-        # Scale 5
-        x5 = self.ap4(x4)
-
-        anet5_out = self.anet(x5, **kwargs)
-        runet5_out = self.runet(x5, **kwargs)
-
-        anet5_out = self.a_deconv4(anet5_out, **kwargs)
-        runet5_out = self.ru_deconv4(runet5_out, **kwargs)
-        anet5_out = self.softmax(anet5_out)
-
-        arunet5_out = tf.math.multiply(anet5_out, runet5_out)
+        # # Scale 5
+        # x5 = self.ap4(x4)
+        #
+        # anet5_out = self.anet(x5, **kwargs)
+        # runet5_out = self.runet(x5, **kwargs)
+        #
+        # anet5_out = self.a_deconv4(anet5_out, **kwargs)
+        # runet5_out = self.ru_deconv4(runet5_out, **kwargs)
+        # anet5_out = self.softmax(anet5_out)
+        #
+        # arunet5_out = tf.math.multiply(anet5_out, runet5_out)
 
         # Element-Wise Summation
-        arunet_out = arunet1_out + arunet2_out + arunet3_out + arunet4_out + arunet5_out
+        arunet_out = arunet1_out + arunet2_out + arunet3_out + arunet4_out  # + arunet5_out
 
         # Use softmax to give confidence level
         arunet_out = self.softmax(arunet_out)

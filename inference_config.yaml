@@ -10,7 +10,7 @@ save_raw: True
 raw_path: ./data/out/french/raw
 
 # The size which all images will be resized for inference
-img_size: (2048, 3072)
+img_size: (1024, 1536)
 # The size of the mini-batch used during inference
 batch_size: 1
 # How many columns along the baseline to look at when searching the image to find the bounding polygon

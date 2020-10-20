@@ -131,9 +131,9 @@ img_size = (1024, 1536)
 
 dataset = ds.get_encoded_inference_dataset_from_img_path(path_to_images, img_size)
 
-# Run the image through the segmentation model
+# Run the images through the segmentation model
 for image, img_name in dataset:
-    output = model(fake_image)
+    output = model(image)
     prediction = tf.argmax(output, axis=3)
 
     # Show the raw model output
@@ -141,7 +141,7 @@ for image, img_name in dataset:
     plt.pause(0.01)
 
     # Segment individual lines based on model output
-    segment_from_predictions(img, prediction, img_name, output_path, plot_images=True)
+    segment_from_predictions(image, prediction, img_name, output_path, plot_images=True)
 ```
 
 ## Build the Conda Package to be uploaded to Anaconda Cloud

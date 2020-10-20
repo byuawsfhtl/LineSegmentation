@@ -5,7 +5,6 @@ import numpy as np
 from PIL import Image, ImageDraw
 from matplotlib import pyplot as plt
 from sklearn.cluster import DBSCAN
-from shapely.geometry import Polygon
 from scipy.ndimage.filters import median_filter
 
 
@@ -14,37 +13,49 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
     """
     Produce line-level segmentations based on the baseline prediction and write the segments to the specified path.
 
-    :param original_image:
-    :param baseline_prediction:
-    :param filename:
-    :param save_path:
-    :param save_images:
-    :param plot_images:
-    :param max_above:
-    :param max_below:
-    :return:
+    :param original_image: The original image given as input to the segmentation model
+    :param baseline_prediction: The output of the segmentation model
+    :param filename: The name of the file that is being segmented (will be used when creating snippet names)
+    :param save_path: The path which text line snippets will be saved
+    :param save_images: Boolean indicating whether or not to save text-line images
+    :param plot_images: Boolean indicating whether or not to plot text-line images
+    :param max_above: The maximum threshold in pixels the search algorithm will look above a baseline for the next line
+                      to create the bounding polygon.
+    :param max_below: The maximum threshold in pixels the search algorithm will look below a baseline for the next line
+                      to create the bounding polygon.
+    :return: None
     """
+    # Image pre-processing and manipulations to get the images in the right format
     original_image = tf.squeeze(original_image).numpy()
-    baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
-
-    baseline_image = sharpen_image(baseline_image)
-
-    baselines = cluster(baseline_image)
-
     original_image = original_image * 255
     original_image = original_image.astype(np.uint8)
-    new_baseline_image = draw_new_image(baselines, Image.fromarray(original_image).size)
 
+    baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
+    baseline_image = sharpen_image(baseline_image)
+
+    # Cluster the baselines given in baseline image using DBSCAN
+    baselines = cluster(baseline_image)
+
+    # Create a new cleaner baseline image using the clustered and filtered baselines
+    new_baseline_image = create_new_image_from_baselines(baselines, Image.fromarray(original_image).size)
+
+    # Sort the clustered lines top to bottom on each half of the page
     columns = sort_lines(baselines, original_image.shape[0:2])
 
+    # Iterate over each column
     for col_index, baselines in enumerate(columns):
+
+        # Iterate over all baselines and segment the text lines
         for index in range(len(baselines)):
             baseline = baselines[index]
 
+            # Lists to hold upper and lower poly-lines
             upper_polyline, lower_polyline = [], []
             upper_polyline_found, lower_polyline_found = [], []
 
+            # Iterate over each pixel in a baseline and create bounding polygon
             for point in baseline:
+                # Search above the baseline
                 above_point, above_found = search_up(point, new_baseline_image, max_height=int(max_above / .7))
                 if not above_found:
                     above_space = max_above
@@ -55,6 +66,7 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
                     upper_point_y = 0
                 upper_point_x = point[1]
 
+                # Search below the baseline
                 below_point, below_found = search_down(point, new_baseline_image, max_height=int(max_below / .4))
                 if not below_found:
                     below_space = max_below
@@ -65,18 +77,21 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
                     lower_point_y = original_image.shape[0] - 1
                 lower_point_x = point[1]
 
+                # Append points to poly-line lists
                 upper_polyline_found.append(above_found)
                 lower_polyline_found.append(below_found)
                 upper_polyline.append((upper_point_x, upper_point_y))
                 lower_polyline.append((lower_point_x, lower_point_y))
 
+            # Clean the poly-lines depending on whether or not the poly-line was found
             upper_polyline = clean_seam(upper_polyline, upper_polyline_found)
             lower_polyline = clean_seam(lower_polyline, lower_polyline_found)
 
-            polygon = np.concatenate((upper_polyline, lower_polyline[::-1]))
+            # Merge the two poly-lines into a single polygon
+            polygon = np.concatenate((upper_polyline, lower_polyline[::-1], np.expand_dims(upper_polyline[0], 0)))
 
-            segment, segment_baseline = segment_from_polygon(Polygon(polygon), Image.fromarray(original_image),
-                                                             baseline)
+            # Segment the text line from the original image based on the given polygon
+            segment, segment_baseline = segment_from_polygon(polygon, Image.fromarray(original_image), baseline)
             dewarped_segment = dewarp(segment, segment_baseline)
             final_segment = final_crop(dewarped_segment)
 
@@ -88,7 +103,14 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
                 plot_image(final_segment, snippet_name)
 
 
-def draw_new_image(baselines, img_size):
+def create_new_image_from_baselines(baselines, img_size):
+    """
+    Create new clean image from baselines
+
+    :param baselines: A list of points that will be drawn onto a new binary image
+    :param img_size: The size of the new image to be created
+    :return: The new image as a numpy array
+    """
     img = Image.new('1', img_size, 0)
     draw = ImageDraw.Draw(img)
 
@@ -305,9 +327,9 @@ def plot_image(img, title=None, figsize=(8, 8)):
     plt.show()
 
 
-def segment_from_polygon(polygon: Polygon, original_image, baseline, cushion=0):
+def segment_from_polygon(polygon, original_image, baseline, cushion=0):
     """
-    Given a Shapely Polygon, segment the image and return the new image segment
+    Given a polygon (as numpy array), segment the image and return the new image segment
     with its new corresponding baseline.
 
     :param polygon: The bounding polygon around the text-line to be extracted
@@ -316,27 +338,28 @@ def segment_from_polygon(polygon: Polygon, original_image, baseline, cushion=0):
     :param cushion: How much whitespace we should add above and below to account for dewarping
     :return: The segmented image, new baseline corresponding to segmented image
     """
-    poly_coords = polygon.exterior.coords[:]
-    bounds = polygon.bounds
+    x_values = [x for x, y in polygon]
+    y_values = [y for x, y in polygon]
+
+    y_start = np.min(y_values)
+    y_end = np.max(y_values)
+    x_start = np.min(x_values)
+    x_end = np.max(x_values)
 
     blank_img = Image.new("L", original_image.size, 255)
     mask = Image.new("1", original_image.size, 0)
     poly_draw = ImageDraw.Draw(mask)
-    poly_draw.polygon(poly_coords, fill=255)
+    poly_draw.polygon([(xcoord, ycoord) for xcoord, ycoord in polygon], fill=255)
 
     y_max = original_image.size[1] - 1  # The size dim in pillow is backwards compared to numpy
 
     # Add a cushion to boundaries, so we don't cut off text when dewarping
-    y_start = int(bounds[1]) - cushion
+    y_start -= cushion
     if y_start < 0:
         y_start = 0
-    y_end = int(bounds[3]) + cushion
+    y_end += cushion
     if y_end > y_max:
         y_end = y_max
-
-    # We're only dewarping y_coordinates, so we don't worry about it here.
-    x_start = int(bounds[0])
-    x_end = int(bounds[2])
 
     new_img = Image.composite(original_image, blank_img, mask)
     new_baseline = [(point[0] - y_start, point[1] - x_start) for point in baseline]

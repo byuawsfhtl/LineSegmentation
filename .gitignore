@@ -30,7 +30,8 @@ share/python-wheels/
 MANIFEST
 
 # Project Specific
-data/
+data/*
+!data/example
 *idea/
 *.sh
 slurm*

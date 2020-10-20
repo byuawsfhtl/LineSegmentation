@@ -1,21 +1,21 @@
 # The path to the train images in the dataset
-train_csv_path: ./data/training/french/labels.csv
-# The path to the validation images in the dataset
+train_csv_path: ./data/example/labels.csv
+# The path to the validation images in the dataset. If this parameter is not set, the training set will be split
+# according to the train_size parameter.
 val_csv_path:
-# Whether or not to split the training set into a training and validation set
-split_train: True
-# The split size determining the train/val split (train = split_size, validation = 1 - split_size)
-train_size: 0.8
+# The ratio used to determine the size of the train/validation split. If split_train_size is set to 0.8, then the
+# training set will contain 80% of the data, and validation 20%. The dataset is not shuffled before being split.
+split_train_size: 0.8
 
 # The path for where to store the model weights after training
-model_out: ./data/model_weights/french_model/run1
+model_out: ./data/model_weights/example_model/run1
 # The path to the pre-trained model weights
 model_in:
 # The height and width of the image after it has been resized
-img_size: (2048, 3072)
+img_size: (1024, 1536)
 
 # The number of epochs (times through the training set) to train
-epochs: 5
+epochs: 20
 # The number of images in a mini-batch
 batch_size: 1
 # The learning rate the optimizer uses during training
@@ -24,7 +24,7 @@ learning_rate: 0.001
 # Whether or not to show graphs of the loss/IoU after training
 show_graphs: False
 # The frequency in epochs which the model weights will be saved during training
-save_every: 1
+save_every: 5
 
 # The number of images that will be loaded into memory and shuffled during the training process In most cases, this
 # number shouldn't change. However, if you are running into memory constraints, you can lower this number.

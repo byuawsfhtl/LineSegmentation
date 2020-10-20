@@ -21,7 +21,6 @@ requirements:
     - scikit-learn=0.22.1
     - tqdm==4.38
     - matplotlib==3.2.1
-    - shapely=1.7.0
   run:
     - python==3.7.3
     - tensorflow-gpu==2.1.0
@@ -31,7 +30,6 @@ requirements:
     - scikit-learn=0.22.1
     - tqdm==4.38
     - matplotlib==3.2.1
-    - shapely=1.7.0
 
 test:
   imports:

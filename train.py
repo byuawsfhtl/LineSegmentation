@@ -6,12 +6,12 @@ import yaml
 
 import lineseg.dataset as ds
 from lineseg.training import ModelTrainer
+from lineseg.model import ARUNet
 
 # Define the string names of all configuration arguments
 TRAIN_CSV_PATH = 'train_csv_path'
 VAL_CSV_PATH = 'val_csv_path'
-SPLIT_TRAIN = 'split_train'
-TRAIN_SIZE = 'train_size'
+SPLIT_TRAIN_SIZE = 'split_train_size'
 MODEL_OUT = 'model_out'
 MODEL_IN = 'model_in'
 IMG_SIZE = 'img_size'
@@ -34,23 +34,21 @@ def train_model(cmd_args):
                                 given as "train_config.yaml"
 
     Configuration File Arguments:
-    * img_path (required): The path to the images in the dataset
-    * label_path (required): The path to the ground truth image labels in the dataset
-    * model_out (required): The path to store the model weights
-    * img_resize (optional): The height and width of the image after it has been resized (default: (768, 1152)
-    * epochs (optional): The number of epochs to train (default: 100)
-    * batch_size (optional): The number of images in a mini-batch (default:2)
-    * weights_path (optional): The path to the pre-trained model weights (default: None)
-    * learning_rate (optional): The learning rate the optimizer uses during training (default: 1e-3)
-    * train_size (optional): The ratio used to determine the size of the train/validation sets (default: 0.8)
-    * tfrecord_in (optional): The path to a previously created tfrecords file. This argument can be specified to skip
-                              the creation of a tfrecord during training (default: None)
-    * tfrecord_out (optional): The path to the created tfrecords file (default: ./data/misc/data.tfrecords)
-    * graphs (optional): Whether or not to show graphs of the loss/IoU after training (default: False)
-    * save_best_after (optional): How many epochs will pass before the model weights are saved (if it has achieved the
-                                  the best accuracy on the validation set) during the training process (default: 10)
-    * augmentation_rate (optional): The rate of extra images that will be applied to the dataset during training. A
-                                    rate of 1 means no data augmentation (default: 20)
+    * train_csv_path: The path to the train images in the dataset
+    * val_csv_path: The path to the validation images in the dataset
+    * split_train: Whether or not to split the training set into a training and validation set
+    * train_size: The split size determining the train/val split (train = split_size, validation = 1 - split_size)
+    * model_out: The path for where to store the model weights after training
+    * model_in: The path to the pre-trained model weights
+    * img_size: The height and width of the image after it has been resized
+    * epochs: The number of epochs (times through the training set) to train
+    * batch_size: The number of images in a mini-batch
+    * learning_rate: The learning rate the optimizer uses during training
+    * show_graphs: Whether or not to show graphs of the loss/IoU after training
+    * save_every: The frequency in epochs which the model weights will be saved during training
+    * shuffle_size: The number of images that will be loaded into memory and shuffled during the training process.
+                    In most cases, this number shouldn't change. However, if you are running into memory constraints,
+                    you can lower this number. A shuffle_size of 0 results in no shuffling
 
     :param cmd_args: command line arguments
     :return: None
@@ -65,14 +63,11 @@ def train_model(cmd_args):
     with open(cmd_args[0]) as f:
         configs = yaml.load(f, Loader=yaml.FullLoader)
 
-    # Print available devices so we know if we are using CPU or GPU
-    tf.print('Devices Available:', tf.config.list_physical_devices())
-
     # Create train/validation dataset depending on configuration settings
-    # Split the train dataset based on the TRAIN_SIZE parameter
-    if configs[SPLIT_TRAIN]:
+    # Split the train dataset depending on if the val_csv_path is empty
+    if not configs[VAL_CSV_PATH]:  # Will evaluate to False is empty
         dataset_size = ds.get_dataset_size(configs[TRAIN_CSV_PATH])
-        train_dataset_size = int(configs[TRAIN_SIZE] * dataset_size)
+        train_dataset_size = int(configs[SPLIT_TRAIN_SIZE] * dataset_size)
         val_dataset_size = dataset_size - train_dataset_size
 
         dataset = ds.get_encoded_dataset_from_csv(configs[TRAIN_CSV_PATH], eval(configs[IMG_SIZE]))
@@ -80,7 +75,7 @@ def train_model(cmd_args):
                                .map(ds.augment)\
                                .shuffle(configs[SHUFFLE_SIZE], reshuffle_each_iteration=True)\
                                .batch(configs[BATCH_SIZE])
-        val_dataset = dataset.take(val_dataset_size)\
+        val_dataset = dataset.skip(train_dataset_size)\
                              .batch(configs[BATCH_SIZE])
     else:  # Use the data as given in the train/validation csv files - no additional splits performed
         train_dataset_size = ds.get_dataset_size(configs[TRAIN_CSV_PATH])
@@ -93,9 +88,13 @@ def train_model(cmd_args):
         val_dataset = ds.get_encoded_dataset_from_csv(configs[VAL_CSV_PATH], eval(configs[IMG_SIZE]))\
             .batch(configs[BATCH_SIZE])
 
+    model = ARUNet()
+    if configs[MODEL_IN]:
+        model.load_weights(configs[MODEL_IN])
+
     # Create the trainer object and load in configuration settings
-    trainer = ModelTrainer(configs[EPOCHS], configs[BATCH_SIZE], train_dataset, train_dataset_size, val_dataset,
-                           val_dataset_size, configs[MODEL_OUT], model_in=configs[MODEL_IN], lr=configs[LEARNING_RATE],
+    trainer = ModelTrainer(model, configs[EPOCHS], configs[BATCH_SIZE], train_dataset, train_dataset_size, val_dataset,
+                           val_dataset_size, configs[MODEL_OUT], lr=configs[LEARNING_RATE],
                            save_every=configs[SAVE_EVERY])
 
     # Train the model

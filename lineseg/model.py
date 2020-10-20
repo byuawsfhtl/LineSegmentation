@@ -6,13 +6,22 @@ from tensorflow.keras.regularizers import l2
 L2c = 0.0003  # The L2 Coefficient
 
 
-class ConvBnActDropMp(Model):
+class ConvActDropMp(Model):
+    """
+    Simple sequential layer that performs a convolution, activation, dropout, max pool.
+    """
     def __init__(self, filters, activation=kl.ReLU, dropout_rate=0.3, max_pool=True, name="ConvBnActDropMp"):
-        super(ConvBnActDropMp, self).__init__()
+        """
+        :param filters: The number of filters used in the convolutional layers
+        :param activation: The keras activation type
+        :param dropout_rate: The rate of dropout
+        :param max_pool: Boolean indicating whether or not max pooling is used at end
+        :param name: The name of the operation
+        """
+        super(ConvActDropMp, self).__init__()
 
         self.model = tf.keras.Sequential(name=name)
         self.model.add(kl.Conv2D(filters, kernel_size=(4, 4), padding='same', kernel_regularizer=l2(L2c)))
-        # self.model.add(kl.BatchNormalization(renorm=True))
         self.model.add(activation())
 
         if dropout_rate is not None and dropout_rate != 0.0:
@@ -25,15 +34,25 @@ class ConvBnActDropMp(Model):
         return self.model(x, **kwargs)
 
 
-class DeconvBnActDrop(Model):
+class DeconvActDrop(Model):
+    """
+    Simple layer that performs deconvolution, activation, dropout
+    """
     def __init__(self, filters, kernel_size=(2, 2), strides=(2, 2), activation=kl.ReLU, dropout_rate=0.3,
                  name="DeconvBnActDrop"):
-        super(DeconvBnActDrop, self).__init__()
+        """
+        :param filters: The number of filters used in convolutional layers
+        :param kernel_size: The kernel size as tuple or int
+        :param strides: The strides as tuple or int
+        :param activation: The keras activation type
+        :param dropout_rate: The rate of dropout
+        :param name: The name of the operation
+        """
+        super(DeconvActDrop, self).__init__()
 
         self.model = tf.keras.Sequential(name=name)
         self.model.add(kl.Conv2DTranspose(filters, kernel_size=kernel_size, strides=strides, padding='same',
                                           kernel_regularizer=l2(L2c)))
-        # self.model.add(kl.BatchNormalization(renorm=True))
         self.model.add(activation())
 
         if dropout_rate is not None and dropout_rate != 0.0:
@@ -44,7 +63,15 @@ class DeconvBnActDrop(Model):
 
 
 class ResidualBlock(Model):
+    """
+    Residual Block layer used in ARU-Net
+    """
     def __init__(self, filters, activation=kl.ReLU, dropout_rate=0.3):
+        """
+        :param filters: The number of filters used in convolutions
+        :param activation: The keras activation type
+        :param dropout_rate: The rate of dropout
+        """
         super(ResidualBlock, self).__init__()
 
         self.filters = filters
@@ -54,19 +81,16 @@ class ResidualBlock(Model):
 
         self.conv = tf.keras.Sequential()
         self.conv.add(kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2c)))
-        # self.conv.add(kl.BatchNormalization(renorm=True))
         self.conv.add(activation())
         if dropout_rate is not None and dropout_rate != 0.0:
             self.conv.add(kl.Dropout(dropout_rate))
 
         self.conv.add(kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2c)))
-        # self.conv.add(kl.BatchNormalization(renorm=True))
         self.conv.add(activation())
         if dropout_rate is not None and dropout_rate != 0.0:
             self.conv.add(kl.Dropout(dropout_rate))
 
         self.conv.add(kl.Conv2D(filters, kernel_size=(3, 3), padding='same', kernel_regularizer=l2(L2c)))
-        # self.conv.add(kl.BatchNormalization(renorm=True))
         self.conv.add(activation())
         if dropout_rate is not None and dropout_rate != 0.0:
             self.conv.add(kl.Dropout(dropout_rate))
@@ -91,13 +115,20 @@ class ResidualBlock(Model):
 
 
 class ANet(Model):
+    """
+    A-Net model used in ARU-Net
+    """
     def __init__(self, activation=kl.ReLU, dropout_rate=0.3):
+        """
+        :param activation: The keras activation type
+        :param dropout_rate: The rate of dropout
+        """
         super(ANet, self).__init__(name='A-Net')
 
-        self.conv1 = ConvBnActDropMp(12, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv1')
-        self.conv2 = ConvBnActDropMp(16, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv2')
-        self.conv3 = ConvBnActDropMp(32, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv3')
-        self.conv4 = ConvBnActDropMp(2, activation=activation, dropout_rate=dropout_rate, max_pool=False, name='conv4')
+        self.conv1 = ConvActDropMp(12, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv1')
+        self.conv2 = ConvActDropMp(16, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv2')
+        self.conv3 = ConvActDropMp(32, activation=activation, dropout_rate=dropout_rate, max_pool=True, name='conv3')
+        self.conv4 = ConvActDropMp(2, activation=activation, dropout_rate=dropout_rate, max_pool=False, name='conv4')
 
     def call(self, x, **kwargs):
         out = self.conv1(x, **kwargs)
@@ -109,7 +140,15 @@ class ANet(Model):
 
 
 class RUNet(Model):
+    """
+    RU-Net Model used in ARU-Net.
+    """
     def __init__(self, initial_filters=8, activation=kl.ReLU, dropout_rate=0.3):
+        """
+        :param initial_filters: The initial number of convolutional filters used in residual blocks
+        :param activation: The activation type
+        :param dropout_rate: The rate of dropout
+        """
         super(RUNet, self).__init__(name='RU-Net')
 
         self.block1 = ResidualBlock(filters=initial_filters, activation=activation, dropout_rate=dropout_rate)
@@ -132,16 +171,16 @@ class RUNet(Model):
         self.mp4 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
         self.mp5 = kl.MaxPooling2D(pool_size=(2, 2), padding='same')
 
-        self.deconv1 = DeconvBnActDrop(initial_filters * 16, kernel_size=(3, 3), strides=(2, 2), activation=activation,
-                                       dropout_rate=dropout_rate)
-        self.deconv2 = DeconvBnActDrop(initial_filters * 8, kernel_size=(3, 3), strides=(2, 2), activation=activation,
-                                       dropout_rate=dropout_rate)
-        self.deconv3 = DeconvBnActDrop(initial_filters * 4, kernel_size=(3, 3), strides=(2, 2), activation=activation,
-                                       dropout_rate=dropout_rate)
-        self.deconv4 = DeconvBnActDrop(initial_filters * 2, kernel_size=(3, 3), strides=(2, 2), activation=activation,
-                                       dropout_rate=dropout_rate)
-        self.deconv5 = DeconvBnActDrop(initial_filters * 1, kernel_size=(3, 3), strides=(2, 2), activation=activation,
-                                       dropout_rate=dropout_rate)
+        self.deconv1 = DeconvActDrop(initial_filters * 16, kernel_size=(3, 3), strides=(2, 2), activation=activation,
+                                     dropout_rate=dropout_rate)
+        self.deconv2 = DeconvActDrop(initial_filters * 8, kernel_size=(3, 3), strides=(2, 2), activation=activation,
+                                     dropout_rate=dropout_rate)
+        self.deconv3 = DeconvActDrop(initial_filters * 4, kernel_size=(3, 3), strides=(2, 2), activation=activation,
+                                     dropout_rate=dropout_rate)
+        self.deconv4 = DeconvActDrop(initial_filters * 2, kernel_size=(3, 3), strides=(2, 2), activation=activation,
+                                     dropout_rate=dropout_rate)
+        self.deconv5 = DeconvActDrop(initial_filters * 1, kernel_size=(3, 3), strides=(2, 2), activation=activation,
+                                     dropout_rate=dropout_rate)
 
     def call(self, x, **kwargs):
         # Down
@@ -186,7 +225,15 @@ class RUNet(Model):
 
 
 class ARUNet(Model):
+    """
+    ARU-Net model used for segmentation
+    """
     def __init__(self, activation=kl.ReLU, runet_initial_filters=8, dropout_rate=0.0):
+        """
+        :param activation: The keras activation type
+        :param runet_initial_filters: The initial number of convolutional filters used in residual blocks
+        :param dropout_rate: The rate of dropout
+        """
         super(ARUNet, self).__init__()
 
         # Scale 1 (Normal Size)
@@ -195,23 +242,18 @@ class ARUNet(Model):
 
         # Scale 2
         self.ap1 = kl.AveragePooling2D(pool_size=(2, 2))
-        self.a_deconv1 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(2, 2), dropout_rate=dropout_rate)
-        self.ru_deconv1 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(2, 2), dropout_rate=dropout_rate)
+        self.a_deconv1 = DeconvActDrop(1, kernel_size=(2, 2), strides=(2, 2), dropout_rate=dropout_rate)
+        self.ru_deconv1 = DeconvActDrop(1, kernel_size=(2, 2), strides=(2, 2), dropout_rate=dropout_rate)
 
         # Scale 3
         self.ap2 = kl.AveragePooling2D(pool_size=(2, 2))
-        self.a_deconv2 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(4, 4), dropout_rate=dropout_rate)
-        self.ru_deconv2 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(4, 4), dropout_rate=dropout_rate)
+        self.a_deconv2 = DeconvActDrop(1, kernel_size=(2, 2), strides=(4, 4), dropout_rate=dropout_rate)
+        self.ru_deconv2 = DeconvActDrop(1, kernel_size=(2, 2), strides=(4, 4), dropout_rate=dropout_rate)
 
         # Scale 4
         self.ap3 = kl.AveragePooling2D(pool_size=(2, 2))
-        self.a_deconv3 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(8, 8), dropout_rate=dropout_rate)
-        self.ru_deconv3 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(8, 8), dropout_rate=dropout_rate)
-
-        # Scale 5
-        # self.ap4 = kl.AveragePooling2D(pool_size=(2, 2))
-        # self.a_deconv4 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(16, 16), dropout_rate=dropout_rate)
-        # self.ru_deconv4 = DeconvBnActDrop(1, kernel_size=(2, 2), strides=(16, 16), dropout_rate=dropout_rate)
+        self.a_deconv3 = DeconvActDrop(1, kernel_size=(2, 2), strides=(8, 8), dropout_rate=dropout_rate)
+        self.ru_deconv3 = DeconvActDrop(1, kernel_size=(2, 2), strides=(8, 8), dropout_rate=dropout_rate)
 
         self.softmax = kl.Softmax(axis=3)
 
@@ -259,20 +301,8 @@ class ARUNet(Model):
 
         arunet4_out = tf.math.multiply(anet4_out, runet4_out)
 
-        # # Scale 5
-        # x5 = self.ap4(x4)
-        #
-        # anet5_out = self.anet(x5, **kwargs)
-        # runet5_out = self.runet(x5, **kwargs)
-        #
-        # anet5_out = self.a_deconv4(anet5_out, **kwargs)
-        # runet5_out = self.ru_deconv4(runet5_out, **kwargs)
-        # anet5_out = self.softmax(anet5_out)
-        #
-        # arunet5_out = tf.math.multiply(anet5_out, runet5_out)
-
         # Element-Wise Summation
-        arunet_out = arunet1_out + arunet2_out + arunet3_out + arunet4_out  # + arunet5_out
+        arunet_out = arunet1_out + arunet2_out + arunet3_out + arunet4_out
 
         # Use softmax to give confidence level
         arunet_out = self.softmax(arunet_out)

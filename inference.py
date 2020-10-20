@@ -31,14 +31,15 @@ def inference(cmd_args):
       file is provided as "inference_config.yaml".
 
     Configuration File Arguments:
-    * img_path: The path to the images to be inferred
-    * out_path: The path to the results of the inference (text-line snippets)
+    * img_path: The path to the directory of images to be inferred
+    * out_path: The path to the directory that segmented line snippets will be stored
     * model_in: The path to the pre-trained model weights
-    * img_size: The height and width for resizing the image when sent into the model for inference
-                (default: 768, 1152)
-    * seg_step_size: How many columns along the baseline to look at when searching the seam image to find
-                     the bounding polygon (default: 1)
-    * plot_imgs: Should each text line snippet be shown to the screen during inference? (default: False)
+    * save_raw: Whether or not to save the raw output of the semantic segmentation model
+    * raw_path: The path to the directory that the raw output images will be stored
+    * img_size: The size which all images will be resized for inference
+    * batch_size: The size of the mini-batch used during inference
+    * seg_step_size: How many pixels along the baseline to look at when searching the image to create a bounding polygon
+    * plot_imgs: Whether or not to plot each text line snippet during the segmentation process (used for debugging)
 
     :param cmd_args: Command line arguments
     :return: None

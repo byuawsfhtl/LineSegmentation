@@ -1,8 +1,6 @@
 import tensorflow as tf
 from tqdm import tqdm
 
-from lineseg.model import ARUNet
-
 
 class ModelTrainer:
     """
@@ -12,12 +10,13 @@ class ModelTrainer:
     trained model.
     """
 
-    def __init__(self, epochs, batch_size, train_dataset, train_dataset_size, val_dataset, val_dataset_size, model_out,
-                 model_in=None, lr=1e-3, save_every=5):
+    def __init__(self, model, epochs, batch_size, train_dataset, train_dataset_size, val_dataset, val_dataset_size,
+                 model_out, lr=1e-3, save_every=5):
         """
         Set up the necessary variables that will be used during training, including the model, optimizer,
         encoder, and other metrics.
 
+        :param model: The ARU-Net segmentation model to be trained
         :param epochs: The number of epochs to train the model
         :param batch_size: How many images will be included in a mini-batch
         :param train_dataset:
@@ -26,9 +25,9 @@ class ModelTrainer:
         :param val_dataset_size: The size of the val dataset
         :param lr: The learning rate
         :param model_out: The path to the weights if we are starting from a pre-trained model
-        :param model_in: The path to the weights of a pre-trained model that will be applied to the model prior to train
         :param save_every: The frequency which the model weights will be saved during training
         """
+        self.model = model
         self.epochs = epochs
         self.batch_size = batch_size
         self.train_dataset = train_dataset
@@ -36,12 +35,7 @@ class ModelTrainer:
         self.val_dataset = val_dataset
         self.val_dataset_size = val_dataset_size
         self.model_out = model_out
-        self.model_in = model_in
         self.save_every = save_every
-
-        self.model = ARUNet()
-        if model_in is not None:
-            self.model.load_weights(model_in)
 
         self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
@@ -51,6 +45,14 @@ class ModelTrainer:
 
         self.train_iou = tf.keras.metrics.MeanIoU(num_classes=2, name='train_iou')
         self.val_iou = tf.keras.metrics.MeanIoU(num_classes=2, name='val_iou')
+
+    def save_model(self):
+        """
+        Saves the model weights to the specified "model_out" path
+        :return: None
+        """
+        tf.print('Saving Model Weights to', self.model_out)
+        self.model.save_weights(self.model_out)
 
     @tf.function
     def train_step(self, images, labels):
@@ -76,14 +78,6 @@ class ModelTrainer:
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
         self.train_loss(loss)
         self.train_iou(labels, tf.argmax(predictions, axis=3))
-
-    def save_model(self):
-        """
-        Saves the model weights to the specified "model_out" path
-        :return: None
-        """
-        print('Saving Model Weights to', self.model_out)
-        self.model.save_weights(self.model_out)
 
     @tf.function
     def val_step(self, images, labels):
@@ -152,7 +146,7 @@ class ModelTrainer:
         except Exception as e:
             print('Exception caught during training: {0}'.format(e))
         finally:
-            print('Finished Training')
+            tf.print('Finished Training')
             self.save_model()
             return self.model, (train_losses, val_losses), (train_ious, val_ious)
 

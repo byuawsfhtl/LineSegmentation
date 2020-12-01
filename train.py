@@ -71,20 +71,23 @@ def train_model(cmd_args):
         val_dataset_size = dataset_size - train_dataset_size
 
         dataset = ds.get_encoded_dataset_from_csv(configs[TRAIN_CSV_PATH], eval(configs[IMG_SIZE]))
-        train_dataset = dataset.take(train_dataset_size)\
-                               .map(ds.augment)\
-                               .shuffle(configs[SHUFFLE_SIZE], reshuffle_each_iteration=True)\
-                               .batch(configs[BATCH_SIZE])
+
+        train_dataset = dataset.take(train_dataset_size).map(ds.augment)
+        if configs[SHUFFLE_SIZE] != 0:
+            train_dataset = train_dataset.shuffle(configs[SHUFFLE_SIZE], reshuffle_each_iteration=True)
+        train_dataset = train_dataset.batch(configs[BATCH_SIZE])
+
         val_dataset = dataset.skip(train_dataset_size)\
                              .batch(configs[BATCH_SIZE])
     else:  # Use the data as given in the train/validation csv files - no additional splits performed
         train_dataset_size = ds.get_dataset_size(configs[TRAIN_CSV_PATH])
         val_dataset_size = ds.get_dataset_size(configs[VAL_CSV_PATH])
 
-        train_dataset = ds.get_encoded_dataset_from_csv(configs[TRAIN_CSV_PATH], eval(configs[IMG_SIZE]))\
-            .map(ds.augment)\
-            .shuffle(configs[SHUFFLE_SIZE], reshuffle_each_iteration=True)\
-            .batch(configs[BATCH_SIZE])
+        train_dataset = ds.get_encoded_dataset_from_csv(configs[TRAIN_CSV_PATH], eval(configs[IMG_SIZE])).map(ds.augment)
+        if configs[SHUFFLE_SIZE] != 0:
+            train_dataset = train_dataset.shuffle(configs[SHUFFLE_SIZE], reshuffle_each_iteration=True)
+        train_dataset = train_dataset.batch(configs[BATCH_SIZE])
+
         val_dataset = ds.get_encoded_dataset_from_csv(configs[VAL_CSV_PATH], eval(configs[IMG_SIZE]))\
             .batch(configs[BATCH_SIZE])
 

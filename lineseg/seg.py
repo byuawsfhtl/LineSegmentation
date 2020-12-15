@@ -95,7 +95,7 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
             dewarped_segment = dewarp(segment, segment_baseline)
             final_segment = final_crop(dewarped_segment)
 
-            snippet_name = filename + '_' + str(col_index) + '_' + str(index) + '.jpg'
+            snippet_name = filename + '_' + str(col_index) + '_' + str(index).zfill(3) + '.jpg'
 
             if save_images:
                 save_image(final_segment, save_path, snippet_name)

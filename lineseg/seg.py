@@ -8,8 +8,9 @@ from sklearn.cluster import DBSCAN
 from scipy.ndimage.filters import median_filter
 
 
-def segment_from_predictions(original_image, baseline_prediction, filename, save_path, save_images=True,
-                             plot_images=False, max_above=25, max_below=15, include_coords_in_path=True):
+def segment_from_predictions(original_image, baseline_prediction, filename, save_path, save_line_images=True,
+                             save_original_image_path=None, plot_images=False, max_above=25, max_below=15,
+                             include_coords_in_path=False):
     """
     Produce line-level segmentations based on the baseline prediction and write the segments to the specified path.
 
@@ -17,7 +18,9 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
     :param baseline_prediction: The output of the segmentation model
     :param filename: The name of the file that is being segmented (will be used when creating snippet names)
     :param save_path: The path which text line snippets will be saved
-    :param save_images: Boolean indicating whether or not to save text-line images
+    :param save_line_images: Boolean indicating whether or not to save text-line images
+    :param save_original_image_path: The path to where the original images will be saved. If none, original images will
+                                     not be saved.
     :param plot_images: Boolean indicating whether or not to plot text-line images
     :param max_above: The maximum threshold in pixels the search algorithm will look above a baseline for the next line
                       to create the bounding polygon.
@@ -31,6 +34,9 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
     original_image = tf.squeeze(original_image).numpy()
     original_image = original_image * 255
     original_image = original_image.astype(np.uint8)
+
+    if save_original_image_path:
+        save_image(original_image, save_original_image_path, filename + '.jpg')
 
     baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
     baseline_image = sharpen_image(baseline_image)
@@ -112,7 +118,7 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
             else:
                 snippet_name = filename + '_' + str(col_index) + '_' + str(index).zfill(3) + '.jpg'
 
-            if save_images:
+            if save_line_images:
                 save_image(final_segment, save_path, snippet_name)
             if plot_images:
                 plot_image(final_segment, snippet_name)

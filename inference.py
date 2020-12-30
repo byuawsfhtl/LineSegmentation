@@ -11,6 +11,7 @@ from lineseg.seg import segment_from_predictions
 
 IMG_PATH = 'img_path'
 OUT_PATH = 'out_path'
+ORIGINAL_OUT_PATH = 'original_out_path'
 MODEL_IN = 'model_in'
 SAVE_RAW = 'save_raw'
 RAW_PATH = 'raw_path'
@@ -56,6 +57,9 @@ def inference(cmd_args):
     # Create our ARU-Net Models
     model = ARUNet()
 
+    original_out_path = configs[ORIGINAL_OUT_PATH] if configs[ORIGINAL_OUT_PATH] else None
+    print('Original_out_path:', original_out_path)
+
     # Load the pre-trained model weights
     model.load_weights(configs[MODEL_IN])
 
@@ -76,7 +80,8 @@ def inference(cmd_args):
 
         # Segment lines based on the output of the model and save individual line snippets to the given out path
         segment_from_predictions(img, baseline_prediction, str(img_name.numpy(), 'utf-8'), configs[OUT_PATH],
-                                 plot_images=configs[PLOT_IMGS])
+                                 plot_images=configs[PLOT_IMGS], include_coords_in_path=True,
+                                 save_original_image_path=original_out_path)
         inference_loop.update(1)
 
     print('Finished performing inference.')

@@ -9,7 +9,7 @@ from scipy.ndimage.filters import median_filter
 
 
 def segment_from_predictions(original_image, baseline_prediction, filename, save_path, save_images=True,
-                             plot_images=False, max_above=25, max_below=15):
+                             plot_images=False, max_above=25, max_below=15, include_coords_in_path=True):
     """
     Produce line-level segmentations based on the baseline prediction and write the segments to the specified path.
 
@@ -23,6 +23,8 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
                       to create the bounding polygon.
     :param max_below: The maximum threshold in pixels the search algorithm will look below a baseline for the next line
                       to create the bounding polygon.
+    :param include_coords_in_path: Boolean indicating whether or not the coordinate information for the line will be
+                                   included in the name of each line snippet.
     :return: None
     """
     # Image pre-processing and manipulations to get the images in the right format
@@ -90,12 +92,25 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
             # Merge the two poly-lines into a single polygon
             polygon = np.concatenate((upper_polyline, lower_polyline[::-1], np.expand_dims(upper_polyline[0], 0)))
 
+            y_coords = [poly[0] for poly in polygon]
+            x_coords = [poly[1] for poly in polygon]
+
+            left_y = np.min(y_coords)
+            left_x = np.min(x_coords)
+            right_y = np.max(y_coords)
+            right_x = np.max(x_coords)
+
             # Segment the text line from the original image based on the given polygon
             segment, segment_baseline = segment_from_polygon(polygon, Image.fromarray(original_image), baseline)
             dewarped_segment = dewarp(segment, segment_baseline)
             final_segment = final_crop(dewarped_segment)
 
-            snippet_name = filename + '_' + str(col_index) + '_' + str(index).zfill(3) + '.jpg'
+            if include_coords_in_path:
+                snippet_name = filename + '_' + str(col_index) + '_' + str(index).zfill(3) + '_' + str(left_y).zfill(4)\
+                               + '_' + str(left_x).zfill(4) + '_' + str(right_y).zfill(4) + '_' + str(right_x).zfill(4)\
+                               + '.jpg'
+            else:
+                snippet_name = filename + '_' + str(col_index) + '_' + str(index).zfill(3) + '.jpg'
 
             if save_images:
                 save_image(final_segment, save_path, snippet_name)

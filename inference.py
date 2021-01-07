@@ -8,6 +8,7 @@ import yaml
 import lineseg.dataset as ds
 from lineseg.model import ARUNet
 from lineseg.seg import segment_from_predictions
+from lineseg.util import model_inference
 
 IMG_PATH = 'img_path'
 OUT_PATH = 'out_path'
@@ -70,7 +71,7 @@ def inference(cmd_args):
     inference_loop = tqdm(total=dataset_size, position=0, leave=True)
     for img, img_name in dataset:
         std_img = tf.image.per_image_standardization(img)  # The inference dataset doesn't standardize the image input
-        baseline_prediction = model(tf.expand_dims(std_img, 0), training=True)
+        baseline_prediction = model_inference(model, tf.expand_dims(std_img, 0))
 
         # Save the raw model output if specified in configuration file
         if configs[SAVE_RAW]:

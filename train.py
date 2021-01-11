@@ -19,7 +19,6 @@ EPOCHS = 'epochs'
 BATCH_SIZE = 'batch_size'
 LEARNING_RATE = 'learning_rate'
 SHOW_GRAPHS = 'show_graphs'
-SAVE_EVERY = 'save_every'
 SHUFFLE_SIZE = 'shuffle_size'
 
 
@@ -45,7 +44,6 @@ def train_model(cmd_args):
     * batch_size: The number of images in a mini-batch
     * learning_rate: The learning rate the optimizer uses during training
     * show_graphs: Whether or not to show graphs of the loss/IoU after training
-    * save_every: The frequency in epochs which the model weights will be saved during training
     * shuffle_size: The number of images that will be loaded into memory and shuffled during the training process.
                     In most cases, this number shouldn't change. However, if you are running into memory constraints,
                     you can lower this number. A shuffle_size of 0 results in no shuffling
@@ -97,8 +95,7 @@ def train_model(cmd_args):
 
     # Create the trainer object and load in configuration settings
     trainer = ModelTrainer(model, configs[EPOCHS], configs[BATCH_SIZE], train_dataset, train_dataset_size, val_dataset,
-                           val_dataset_size, configs[MODEL_OUT], lr=configs[LEARNING_RATE],
-                           save_every=configs[SAVE_EVERY])
+                           val_dataset_size, configs[MODEL_OUT], lr=configs[LEARNING_RATE])
 
     # Train the model
     model, losses, ious = trainer.train()

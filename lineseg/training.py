@@ -11,7 +11,7 @@ class ModelTrainer:
     """
 
     def __init__(self, model, epochs, batch_size, train_dataset, train_dataset_size, val_dataset, val_dataset_size,
-                 model_out, lr=1e-3, save_every=5):
+                 model_out, lr=1e-3):
         """
         Set up the necessary variables that will be used during training, including the model, optimizer,
         encoder, and other metrics.
@@ -25,7 +25,6 @@ class ModelTrainer:
         :param val_dataset_size: The size of the val dataset
         :param lr: The learning rate
         :param model_out: The path to the weights if we are starting from a pre-trained model
-        :param save_every: The frequency which the model weights will be saved during training
         """
         self.model = model
         self.epochs = epochs
@@ -35,7 +34,6 @@ class ModelTrainer:
         self.val_dataset = val_dataset
         self.val_dataset_size = val_dataset_size
         self.model_out = model_out
-        self.save_every = save_every
 
         self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
@@ -108,6 +106,9 @@ class ModelTrainer:
         train_losses, val_losses = [], []
         train_ious, val_ious = [], []
 
+        # Threshold that determines when weights start to be saved
+        best_val_loss = 100
+
         try:
             for epoch in range(self.epochs):
                 # Reset our metrics for each epoch
@@ -139,15 +140,14 @@ class ModelTrainer:
                 train_ious.append(self.train_iou.result().numpy())
                 val_ious.append(self.val_iou.result().numpy())
 
-                # Only save the model if the validation IoU is greater than anything we've seen
-                if epoch % self.save_every == self.save_every - 1:
+                if val_losses[-1] < best_val_loss:
                     self.save_model()
+                    best_val_loss = val_losses[-1]
 
         except Exception as e:
             print('Exception caught during training: {0}'.format(e))
         finally:
             tf.print('Finished Training')
-            self.save_model()
             return self.model, (train_losses, val_losses), (train_ious, val_ious)
 
     def __call__(self):

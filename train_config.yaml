@@ -23,8 +23,6 @@ learning_rate: 0.001
 
 # Whether or not to show graphs of the loss/IoU after training
 show_graphs: False
-# The frequency in epochs which the model weights will be saved during training
-save_every: 5
 
 # The number of images that will be loaded into memory and shuffled during the training process In most cases, this
 # number shouldn't change. However, if you are running into memory constraints, you can lower this number.

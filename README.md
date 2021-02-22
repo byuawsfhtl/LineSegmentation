@@ -18,23 +18,12 @@ and can be used in any Conda environment.
 * Tqdm
 * Scikit-learn
 
-A .yaml file has been included that specifies the necessary dependencies. A
-conda environment can be created and activated by running the following
-commands:
+A .yaml file for each supported platform has been included that specifies the necessary dependencies. A
+conda environment for MacOS/Windows/Linux can be created and activated by running the following commands:
 
 ```
-conda env create -f environment.yaml
+conda env create -f environment_linux.yaml  # or environment_macos.yaml, environment_windows.yaml
 conda activate lineseg_env
-```
-
-If you are running on MacOS, you must use the MacOs-specific environment file:
-(This is due to the fact that Tensorflow does not support GPU/Cuda for MacOS,
-this environment file may also be used if running on a Windows machine without
-an Nvidia GPU)
-
-```
-conda env create -f environment_macos.yaml
-conda activate linseg_env
 ```
 
 ## Usage with Provided Scripts

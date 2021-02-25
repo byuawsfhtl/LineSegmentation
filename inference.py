@@ -69,8 +69,8 @@ def inference(cmd_args):
 
     # Iterate through each of the images and perform inference
     inference_loop = tqdm(total=dataset_size, position=0, leave=True)
-    for img, img_name in dataset:
-        std_img = tf.image.per_image_standardization(img)  # The inference dataset doesn't standardize the image input
+    for resized_img, img, img_name in dataset:
+        std_img = tf.image.per_image_standardization(resized_img)  # The inference dataset doesn't standardize the image input
         baseline_prediction = model_inference(model, tf.expand_dims(std_img, 0))
 
         # Save the raw model output if specified in configuration file
@@ -80,7 +80,7 @@ def inference(cmd_args):
             tf.io.write_file(os.path.join(configs[RAW_PATH], str(img_name.numpy(), 'utf-8') + '.jpg'), encoded)
 
         # Segment lines based on the output of the model and save individual line snippets to the given out path
-        segment_from_predictions(img, baseline_prediction, str(img_name.numpy(), 'utf-8'), configs[OUT_PATH],
+        segment_from_predictions(resized_img, img, baseline_prediction, str(img_name.numpy(), 'utf-8'), configs[OUT_PATH],
                                  plot_images=configs[PLOT_IMGS], include_coords_in_path=True,
                                  save_original_image_path=original_out_path)
         inference_loop.update(1)

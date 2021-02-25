@@ -8,12 +8,13 @@ from sklearn.cluster import DBSCAN
 from scipy.ndimage.filters import median_filter
 
 
-def segment_from_predictions(original_image, baseline_prediction, filename, save_path, save_line_images=True,
+def segment_from_predictions(padded_img, original_img, baseline_prediction, filename, save_path, save_line_images=True,
                              save_original_image_path=None, plot_images=False, max_above=25, max_below=15,
                              include_coords_in_path=False):
     """
     Produce line-level segmentations based on the baseline prediction and write the segments to the specified path.
 
+    :param padded_img: The image that has been padded and resized
     :param original_image: The original image given as input to the segmentation model
     :param baseline_prediction: The output of the segmentation model
     :param filename: The name of the file that is being segmented (will be used when creating snippet names)
@@ -31,12 +32,17 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
     :return: None
     """
     # Image pre-processing and manipulations to get the images in the right format
-    original_image = tf.squeeze(original_image).numpy()
-    original_image = original_image * 255
-    original_image = original_image.astype(np.uint8)
+    padded_img = tf.squeeze(padded_img).numpy()
+    padded_img = padded_img * 255
+    padded_img = padded_img.astype(np.uint8)
+
+
+    original_img = tf.squeeze(original_img).numpy()
+    original_img = original_img * 255
+    original_img = original_img.astype(np.uint8)
 
     if save_original_image_path:
-        save_image(original_image, save_original_image_path, filename + '.jpg')
+        save_image(original_img, save_original_image_path, filename + '.jpg')
 
     baseline_image = tf.squeeze(baseline_prediction[:, :, :, 1])
     baseline_image = sharpen_image(baseline_image)
@@ -45,10 +51,10 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
     baselines = cluster(baseline_image)
 
     # Create a new cleaner baseline image using the clustered and filtered baselines
-    new_baseline_image = create_new_image_from_baselines(baselines, Image.fromarray(original_image).size)
+    new_baseline_image = create_new_image_from_baselines(baselines, Image.fromarray(original_img).size)
 
     # Sort the clustered lines top to bottom on each half of the page
-    columns = sort_lines(baselines, original_image.shape[0:2])
+    columns = sort_lines(baselines, original_img.shape[0:2])
 
     # Iterate over each column
     for col_index, baselines in enumerate(columns):
@@ -81,8 +87,8 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
                 else:
                     below_space = int((below_point[1] - point[0]) * 0.4)
                 lower_point_y = point[0] + below_space
-                if lower_point_y >= original_image.shape[0]:
-                    lower_point_y = original_image.shape[0] - 1
+                if lower_point_y >= padded_img.shape[0]:
+                    lower_point_y = padded_img.shape[0] - 1
                 lower_point_x = point[1]
 
                 # Append points to poly-line lists
@@ -97,6 +103,15 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
 
             # Merge the two poly-lines into a single polygon
             polygon = np.concatenate((upper_polyline, lower_polyline[::-1], np.expand_dims(upper_polyline[0], 0)))
+            
+
+            for index in range(len(polygon)) :
+                point = polygon[index]
+                x, y =  map_points_to_original_img( point[1] , point[0], original_img.shape, padded_img.shape)
+                polygon[index][1] = x
+                polygon[index][0] = y
+
+            
 
             y_coords = [poly[0] for poly in polygon]
             x_coords = [poly[1] for poly in polygon]
@@ -106,8 +121,9 @@ def segment_from_predictions(original_image, baseline_prediction, filename, save
             right_y = np.max(y_coords)
             right_x = np.max(x_coords)
 
+
             # Segment the text line from the original image based on the given polygon
-            segment, segment_baseline = segment_from_polygon(polygon, Image.fromarray(original_image), baseline)
+            segment, segment_baseline = segment_from_polygon(polygon, Image.fromarray(original_img), baseline)
             dewarped_segment = dewarp(segment, segment_baseline)
             final_segment = final_crop(dewarped_segment)
 
@@ -367,6 +383,8 @@ def segment_from_polygon(polygon, original_image, baseline, cushion=0):
     x_start = np.min(x_values)
     x_end = np.max(x_values)
 
+    
+
     blank_img = Image.new("L", original_image.size, 255)
     mask = Image.new("1", original_image.size, 0)
     poly_draw = ImageDraw.Draw(mask)
@@ -381,6 +399,7 @@ def segment_from_polygon(polygon, original_image, baseline, cushion=0):
     y_end += cushion
     if y_end > y_max:
         y_end = y_max
+
 
     new_img = Image.composite(original_image, blank_img, mask)
     new_baseline = [(point[0] - y_start, point[1] - x_start) for point in baseline]
@@ -502,3 +521,49 @@ def sort_lines(lines, img_shape, num_columns=2, kernel_size=10):
         columns_list.append(column_lines)
 
     return columns_list
+
+
+
+
+#Makes sure you have the right ones x and y pairs
+def map_points_to_original_img(x_point, y_point, start_size, end_size) :
+    """
+    This function takes two points on the resized image and will return what the points are in the original image
+    :param x_left: The leftmost X coordinate
+    :param y_left: The leftmost y coordinate
+    :param start_size: The original size dimensions of the image before the resizing
+    :param end_size: The size dimensions of the image after the resizing
+    """
+    original_ratio = start_size[1] / start_size[0]
+    resized_ratio = end_size[1] /end_size[0]
+    scales = []
+    scales.append(start_size[1] / end_size[1])
+    scales.append(start_size[0] / end_size[0])
+
+    #In this case there is padding along the X Axis
+    if scales[0] < scales[1] :
+        scales.clear()
+        padding = end_size[0] * (resized_ratio - original_ratio)
+        scales.append(start_size[1] / ( end_size[1] - padding)  )
+        scales.append(start_size[0] / end_size[0]  )
+        padding = padding / 2
+        scale_x = scales[0]
+        scale_y = scales[1]
+        return int( ( x_point - padding )  * scale_x ), int( y_point * scale_y )
+
+    #In this case there is padding along the Y axis
+    elif scales[0] > scales[1] :
+        scales.clear()
+        padding = end_size[1] * ( (1 / resized_ratio) - (1 / original_ratio) )
+        scales.append(start_size[1] / end_size[1])
+        scales.append(start_size[0] / ( end_size[0] - padding) )
+        padding = padding / 2
+        scale_x = scales[0]
+        scale_y = scales[1]
+        return int( x_point * scale_x ), int( ( y_point - padding ) * scale_y )
+
+    #There is no padding the image was evenly scaled
+    elif scales[0] == scales[1] :
+        scale_x = scales[0]
+        scale_y = scales[1]
+        return int( x_point * scale_x ), int( y_point * scale_y )

@@ -20,15 +20,17 @@ def encode_single_img(path, img_size, binary=False, standardization=True):
 
     img_bytes = tf.io.read_file(path)
     img = tf.image.decode_image(img_bytes, dtype=tf.float32, channels=num_channels)
-    img = tf.image.resize_with_pad(img, img_size[0], img_size[1])
+    resized_img = tf.image.resize_with_pad(img, img_size[0], img_size[1])
 
     if standardization:
         img = tf.image.per_image_standardization(img)
+        resized_img = tf.image.per_image_standardization(resized_img)
 
     if binary:
         img = tf.where(img > .5, tf.ones_like(img), tf.zeros_like(img))
+        resized_img = tf.where(resized_img > .5, tf.ones_like(resized_img), tf.zeros_like(resized_img))
 
-    return img
+    return resized_img, img
 
 
 def encode_img_with_name(img_path, file_separator, img_size):
@@ -40,10 +42,10 @@ def encode_img_with_name(img_path, file_separator, img_size):
     :param img_size: The size of the image after resizing
     :return: The encoded image and name
     """
-    img = encode_single_img(img_path, img_size, standardization=False)
+    resized_img, img = encode_single_img(img_path, img_size, standardization=False)
     img_name = tf.strings.split(tf.strings.split(img_path, sep=file_separator)[-1], sep='.')[0]
 
-    return img, img_name
+    return resized_img, img, img_name 
 
 
 def encode_imgs(original_path, gt_path, img_size):

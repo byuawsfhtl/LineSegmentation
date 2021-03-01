@@ -104,6 +104,16 @@ def segment_from_predictions(original_img, baseline_prediction, filename, save_p
             # Merge the two poly-lines into a single polygon
             polygon = np.concatenate((upper_polyline, lower_polyline[::-1], np.expand_dims(upper_polyline[0], 0)))
 
+            y_coords = [poly[0] for poly in polygon]
+            x_coords = [poly[1] for poly in polygon]
+
+            left_y = np.min(y_coords)
+            left_x = np.min(x_coords)
+            right_y = np.max(y_coords)
+            right_x = np.max(x_coords)
+
+            print('Original Coords: {}_{}_{}_{}'.format(left_y, left_x, right_y, right_x))
+
             for poly_index in range(len(polygon)):
                 point = polygon[poly_index]
                 x, y = map_points_to_original_img(point[1], point[0], original_img.shape, baseline_prediction.shape)
@@ -117,6 +127,8 @@ def segment_from_predictions(original_img, baseline_prediction, filename, save_p
             left_x = np.min(x_coords)
             right_y = np.max(y_coords)
             right_x = np.max(x_coords)
+
+            print('Mapped Coords: {}_{}_{}_{}'.format(left_y, left_x, right_y, right_x))
 
             # Segment the text line from the original image based on the given polygon
             segment, segment_baseline = segment_from_polygon(polygon, Image.fromarray(original_img), baseline)

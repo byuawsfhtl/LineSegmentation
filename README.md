@@ -55,8 +55,6 @@ then the training set will contain 80% of the data, and validation 20%. The data
 * epochs: The number of epochs (times through the training set) to train
 * batch_size: The number of images in a mini-batch
 * learning_rate: The learning rate the optimizer uses during training
-* show_graphs: Whether or not to show graphs of the loss/IoU after training
-* save_every: The frequency in epochs which the model weights will be saved during training
 * shuffle_size: The number of images that will be loaded into memory and shuffled during the training process In most
                 cases, this number shouldn't change. However, if you are running into memory constraints, you can lower
                 this number. A shuffle_size of 0 results in no shuffling
@@ -84,8 +82,6 @@ Configuration File Arguments:
 * raw_path: The path to the directory that the raw output images will be stored
 * img_size: The size which all images will be resized for inference
 * batch_size: The size of the mini-batch used during inference
-* seg_step_size: How many pixels along the baseline to look at when searching the image to create a bounding polygon
-* plot_imgs: Whether or not to plot each text line snippet during the segmentation process (used for debugging)
 
 ## Usage with Conda Package
 

@@ -21,9 +21,6 @@ batch_size: 1
 # The learning rate the optimizer uses during training
 learning_rate: 0.001
 
-# Whether or not to show graphs of the loss/IoU after training
-show_graphs: False
-
 # The number of images that will be loaded into memory and shuffled during the training process In most cases, this
 # number shouldn't change. However, if you are running into memory constraints, you can lower this number.
 # A shuffle_size of 0 results in no shuffling

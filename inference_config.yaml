@@ -15,8 +15,3 @@ raw_path: ./data/out/example/raw
 img_size: (1024, 1536)
 # The size of the mini-batch used during inference
 batch_size: 1
-# How many pixels along the baseline to look at when searching the image to create a bounding polygon
-seg_step_size: 25
-
-# Whether or not to plot each text line snippet during the segmentation process (used for debugging)
-plot_imgs: False

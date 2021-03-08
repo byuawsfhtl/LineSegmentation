@@ -1,7 +1,5 @@
 import sys
 
-import tensorflow as tf
-from matplotlib import pyplot as plt
 import yaml
 
 import lineseg.dataset as ds
@@ -18,7 +16,6 @@ IMG_SIZE = 'img_size'
 EPOCHS = 'epochs'
 BATCH_SIZE = 'batch_size'
 LEARNING_RATE = 'learning_rate'
-SHOW_GRAPHS = 'show_graphs'
 SHUFFLE_SIZE = 'shuffle_size'
 
 
@@ -33,25 +30,24 @@ def train_model(cmd_args):
                                 given as "train_config.yaml"
 
     Configuration File Arguments:
-    * train_csv_path: The path to the train images in the dataset
-    * val_csv_path: The path to the validation images in the dataset
-    * split_train: Whether or not to split the training set into a training and validation set
-    * train_size: The split size determining the train/val split (train = split_size, validation = 1 - split_size)
-    * model_out: The path for where to store the model weights after training
-    * model_in: The path to the pre-trained model weights
-    * img_size: The height and width of the image after it has been resized
-    * epochs: The number of epochs (times through the training set) to train
-    * batch_size: The number of images in a mini-batch
-    * learning_rate: The learning rate the optimizer uses during training
-    * show_graphs: Whether or not to show graphs of the loss/IoU after training
-    * shuffle_size: The number of images that will be loaded into memory and shuffled during the training process.
-                    In most cases, this number shouldn't change. However, if you are running into memory constraints,
-                    you can lower this number. A shuffle_size of 0 results in no shuffling
+    * train_csv_path: (Required) The path to the train images in the dataset
+    * val_csv_path: (Optional) The path to the validation images in the dataset
+    * split_train_size: (Required, if val_csv_path not set, else Optional) The ratio used to determine the size of the
+    train/validation split. If split_train_size is set to 0.8, then the training set will contain 80% of the data, and
+    validation 20%. The dataset is not shuffled before being split.
+    * model_out: (Required) The path for where to store the model weights after training
+    * model_in: (Required) The path to the pre-trained model weights
+    * img_size: (Required) The height and width of the image after it has been resized
+    * epochs: (Required) The number of epochs (times through the training set) to train
+    * batch_size: (Required) The number of images in a mini-batch
+    * learning_rate: (Required) The learning rate the optimizer uses during training
+    * shuffle_size: (Required) The number of images that will be loaded into memory and shuffled during the training
+    process. In most cases, this number shouldn't change. However, if you are running into memory constraints, you can
+    lower this number. A shuffle_size of 0 results in no shuffling
 
     :param cmd_args: command line arguments
     :return: None
     """
-
     # Ensure the train config file is included
     if len(cmd_args) == 0:
         print('Must include path to train config file. The default file is includes as train_config.yaml')
@@ -81,7 +77,8 @@ def train_model(cmd_args):
         train_dataset_size = ds.get_dataset_size(configs[TRAIN_CSV_PATH])
         val_dataset_size = ds.get_dataset_size(configs[VAL_CSV_PATH])
 
-        train_dataset = ds.get_encoded_dataset_from_csv(configs[TRAIN_CSV_PATH], eval(configs[IMG_SIZE])).map(ds.augment)
+        train_dataset = ds.get_encoded_dataset_from_csv(configs[TRAIN_CSV_PATH], eval(configs[IMG_SIZE]))\
+            .map(ds.augment)
         if configs[SHUFFLE_SIZE] != 0:
             train_dataset = train_dataset.shuffle(configs[SHUFFLE_SIZE], reshuffle_each_iteration=True)
         train_dataset = train_dataset.batch(configs[BATCH_SIZE])
@@ -105,30 +102,6 @@ def train_model(cmd_args):
     print('Val Losses:', losses[1])
     print('Train IoU:', ious[0])
     print('Val IoU:', ious[1])
-
-    # Show the graphs if specified by the user
-    if configs[SHOW_GRAPHS]:
-        show_graph(losses[0], losses[1], 'Loss')
-        show_graph(ious[0], ious[1], 'IoU')
-
-
-def show_graph(train_metric, val_metric, title):
-    """
-    Creates a graph showing a given metric over time
-
-    :param train_metric:  list of the given metric on the training set per epoch
-    :param val_metric: list of the given metric on the validation set per epoch
-    :param title: the metric type which will be used for the title and y-axis label
-    :return: None
-    """
-    plt.title(title)
-    plt.xlabel('Epochs')
-    plt.ylabel(title)
-
-    plt.plot(train_metric, label='Train')
-    plt.plot(val_metric, label='Val')
-    plt.legend()
-    plt.show()
 
 
 if __name__ == '__main__':

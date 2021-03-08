@@ -18,8 +18,6 @@ SAVE_RAW = 'save_raw'
 RAW_PATH = 'raw_path'
 IMG_SIZE = 'img_size'
 BATCH_SIZE = 'batch_size'
-SEG_STEP_SIZE = 'seg_step_size'
-PLOT_IMGS = 'plot_imgs'
 
 
 def inference(cmd_args):
@@ -33,15 +31,14 @@ def inference(cmd_args):
       file is provided as "inference_config.yaml".
 
     Configuration File Arguments:
-    * img_path: The path to the directory of images to be inferred
-    * out_path: The path to the directory that segmented line snippets will be stored
-    * model_in: The path to the pre-trained model weights
-    * save_raw: Whether or not to save the raw output of the semantic segmentation model
-    * raw_path: The path to the directory that the raw output images will be stored
-    * img_size: The size which all images will be resized for inference
-    * batch_size: The size of the mini-batch used during inference
-    * seg_step_size: How many pixels along the baseline to look at when searching the image to create a bounding polygon
-    * plot_imgs: Whether or not to plot each text line snippet during the segmentation process (used for debugging)
+    * img_path: (Required) The path to the directory of images to be inferred
+    * out_path: (Required) The path to the directory that segmented line snippets will be stored
+    * model_in: (Required) The path to the pre-trained model weights
+    * save_raw: (Required) Whether or not to save the raw output of the semantic segmentation model
+    * raw_path: (Required if save_raw is set, else Optional) The path to the directory that the raw output images will
+    be stored
+    * img_size: (Required) The size which all images will be resized for inference
+    * batch_size: (Required) The size of the mini-batch used during inference
 
     :param cmd_args: Command line arguments
     :return: None
@@ -81,8 +78,7 @@ def inference(cmd_args):
 
         # Segment lines based on the output of the model and save individual line snippets to the given out path
         segment_from_predictions(img, baseline_prediction, str(img_name.numpy(), 'utf-8'), configs[OUT_PATH],
-                                 plot_images=configs[PLOT_IMGS], include_coords_in_path=True,
-                                 save_original_image_path=original_out_path)
+                                 include_coords_in_path=True, save_original_image_path=original_out_path)
         inference_loop.update(1)
 
     print('Finished performing inference.')

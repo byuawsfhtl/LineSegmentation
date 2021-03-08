@@ -9,6 +9,7 @@ from lineseg.model import ARUNet
 from lineseg.seg import segment_from_predictions
 from lineseg.util import model_inference
 
+
 IMG_PATH = 'img_path'
 OUT_PATH = 'out_path'
 MODEL_IN = 'model_in'
@@ -56,7 +57,7 @@ def inference(cmd_args):
     model = ARUNet()
 
     # Load the pre-trained model weights
-    model.load_weights(configs[MODEL_IN])
+    model.load_weights(configs[MODEL_IN]).expect_partial()
 
     dataset = ds.get_encoded_inference_dataset_from_img_path(configs[IMG_PATH], eval(configs[IMG_SIZE]))\
         .batch(configs[BATCH_SIZE])
@@ -64,6 +65,8 @@ def inference(cmd_args):
 
     # Iterate through each of the images and perform inference
     inference_loop = tqdm(total=dataset_size, position=0, leave=True)
+
+
     for original_imgs, resized_imgs, img_names in dataset:
         baseline_predictions = model_inference(model, resized_imgs)
 

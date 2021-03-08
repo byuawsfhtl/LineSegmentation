@@ -112,13 +112,14 @@ def segment_from_predictions(original_img, baseline_prediction, filename, save_p
             right_y = np.max(y_coords)
             right_x = np.max(x_coords)
 
-            print('Original Coords: {}_{}_{}_{}'.format(left_y, left_x, right_y, right_x))
+
 
             for poly_index in range(len(polygon)):
                 point = polygon[poly_index]
                 x, y = map_points_to_original_img(point[1], point[0], original_img.shape, baseline_prediction.shape)
                 polygon[poly_index][1] = x
                 polygon[poly_index][0] = y
+
 
             y_coords = [poly[0] for poly in polygon]
             x_coords = [poly[1] for poly in polygon]
@@ -128,7 +129,6 @@ def segment_from_predictions(original_img, baseline_prediction, filename, save_p
             right_y = np.max(y_coords)
             right_x = np.max(x_coords)
 
-            print('Mapped Coords: {}_{}_{}_{}'.format(left_y, left_x, right_y, right_x))
 
             # Segment the text line from the original image based on the given polygon
             segment, segment_baseline = segment_from_polygon(polygon, Image.fromarray(original_img), baseline)
@@ -537,34 +537,30 @@ def map_points_to_original_img(x_point, y_point, start_size, end_size):
     :param start_size: The original size dimensions of the image before the resizing
     :param end_size: The size dimensions of the image after the resizing
     """
+
     original_ratio = start_size[1] / start_size[0]
     resized_ratio = end_size[1] / end_size[0]
     scales = [start_size[1] / end_size[1], start_size[0] / end_size[0]]
 
     # In this case there is padding along the X Axis
     if scales[0] < scales[1]:
-        scales.clear()
-        padding = end_size[0] * (resized_ratio - original_ratio)
-        scales.append(start_size[1] / (end_size[1] - padding))
-        scales.append(start_size[0] / end_size[0])
+        padding = end_size[1] - (original_ratio * end_size[0])
+        scale = start_size[0] / end_size[0]
         padding = padding / 2
-        scale_x = scales[0]
-        scale_y = scales[1]
-        return int((x_point - padding) * scale_x), int(y_point * scale_y)
+        x, y = int(round(( x_point - padding ) * scale)), int(round(y_point * scale))
+        return x, y
 
     # In this case there is padding along the Y axis
     elif scales[0] > scales[1]:
-        scales.clear()
-        padding = end_size[1] * ((1 / resized_ratio) - (1 / original_ratio))
-        scales.append(start_size[1] / end_size[1])
-        scales.append(start_size[0] / (end_size[0] - padding))
+        padding = end_size[0] - ((1 / original_ratio) * end_size[1])
+        scale = start_size[1] / end_size[1]
         padding = padding / 2
-        scale_x = scales[0]
-        scale_y = scales[1]
-        return int(x_point * scale_x), int((y_point - padding) * scale_y)
+        x, y = int(round(x_point * scale)), int(round((y_point - padding) * scale))
+        return x, y
 
     # There is no padding the image was evenly scaled
     elif scales[0] == scales[1]:
         scale_x = scales[0]
         scale_y = scales[1]
-        return int(x_point * scale_x), int(y_point * scale_y)
+        x, y = int(x_point * scale_x), int(y_point * scale_y)
+        return x, y

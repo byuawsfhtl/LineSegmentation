@@ -1,13 +1,13 @@
 # The path to the directory of images to be inferred
-img_path: ./data/test_images
+img_path: ./data/example/test_images
 # The path to the directory that segmented line snippets will be stored
-out_path: ./data/out/snippets
+out_path: ./data/out/example/snippets
 # The path to the pre-trained model weights
-model_in: ./data/model_weights/lineseg_model/run1
+model_in: ./data/model_weights/example_model/lineseg_model/lineseg_model/run1
 # Whether or not to save the raw output of the semantic segmentation model
 save_raw: True
 # The path to the directory that the raw output images will be stored
-raw_path: ./data/out/raw
+raw_path: ./data/out/example/raw
 
 # The size which all images will be resized for inference
 img_size: (1024, 1536)

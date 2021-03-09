@@ -108,13 +108,11 @@ def segment_from_predictions(original_img, baseline_prediction, filename, save_p
 
             x_coords = [poly[0] for poly in polygon]
             y_coords = [poly[1] for poly in polygon]
-            
 
             left_y = np.min(y_coords)
             left_x = np.min(x_coords)
             right_y = np.max(y_coords)
             right_x = np.max(x_coords)
-
 
             # Segment the text line from the original image based on the given polygon
             segment, segment_baseline = segment_from_polygon(polygon, Image.fromarray(original_img), baseline)
@@ -534,9 +532,8 @@ def map_points_to_original_img(polygon, start_size, end_size):
         padding = padding / 2
         for poly_index in range(len(polygon)):
             point = polygon[poly_index]
-            polygon[poly_index][0] = int(round(( point[0] - padding ) * scale))
+            polygon[poly_index][0] = int(round((point[0] - padding) * scale))
             polygon[poly_index][1] = int(round(point[1] * scale))
-        
 
     # In this case there is padding along the Y axis
     elif scales[0] > scales[1]:
@@ -547,7 +544,6 @@ def map_points_to_original_img(polygon, start_size, end_size):
             point = polygon[poly_index]
             polygon[poly_index][0] = int(round(point[0] * scale))
             polygon[poly_index][1] = int(round((point[1] - padding) * scale))
-            
 
     # There is no padding the image was evenly scaled
     elif scales[0] == scales[1]:

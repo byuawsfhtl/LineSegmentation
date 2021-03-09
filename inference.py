@@ -57,7 +57,7 @@ def inference(cmd_args):
     model = ARUNet()
 
     # Load the pre-trained model weights
-    model.load_weights(configs[MODEL_IN]).expect_partial()
+    model.load_weights(configs[MODEL_IN])
 
     dataset = ds.get_encoded_inference_dataset_from_img_path(configs[IMG_PATH], eval(configs[IMG_SIZE]))\
         .batch(configs[BATCH_SIZE])

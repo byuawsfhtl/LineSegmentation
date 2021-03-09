@@ -2,6 +2,7 @@
   "ExpandedNodes": [
     "",
     "\\data",
+    "\\data\\example",
     "\\lineseg"
   ],
   "SelectedNode": "\\lineseg\\seg.py",

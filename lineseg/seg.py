@@ -104,25 +104,11 @@ def segment_from_predictions(original_img, baseline_prediction, filename, save_p
             # Merge the two poly-lines into a single polygon
             polygon = np.concatenate((upper_polyline, lower_polyline[::-1], np.expand_dims(upper_polyline[0], 0)))
 
-            y_coords = [poly[0] for poly in polygon]
-            x_coords = [poly[1] for poly in polygon]
+            polygon = map_points_to_original_img(polygon, original_img.shape, baseline_prediction.shape)
 
-            left_y = np.min(y_coords)
-            left_x = np.min(x_coords)
-            right_y = np.max(y_coords)
-            right_x = np.max(x_coords)
-
-
-
-            for poly_index in range(len(polygon)):
-                point = polygon[poly_index]
-                x, y = map_points_to_original_img(point[1], point[0], original_img.shape, baseline_prediction.shape)
-                polygon[poly_index][1] = x
-                polygon[poly_index][0] = y
-
-
-            y_coords = [poly[0] for poly in polygon]
-            x_coords = [poly[1] for poly in polygon]
+            x_coords = [poly[0] for poly in polygon]
+            y_coords = [poly[1] for poly in polygon]
+            
 
             left_y = np.min(y_coords)
             left_x = np.min(x_coords)
@@ -528,12 +514,11 @@ def sort_lines(lines, img_shape, num_columns=2, kernel_size=10):
     return columns_list
 
 
-def map_points_to_original_img(x_point, y_point, start_size, end_size):
+def map_points_to_original_img(polygon, start_size, end_size):
     """
     This function takes two points on the resized image and will return what the points are in the original image
 
-    :param x_point: The x coordinate
-    :param y_point: The y coordinate
+    :param polygon: The polygon that is getting mapped to the original image
     :param start_size: The original size dimensions of the image before the resizing
     :param end_size: The size dimensions of the image after the resizing
     """
@@ -547,20 +532,29 @@ def map_points_to_original_img(x_point, y_point, start_size, end_size):
         padding = end_size[1] - (original_ratio * end_size[0])
         scale = start_size[0] / end_size[0]
         padding = padding / 2
-        x, y = int(round(( x_point - padding ) * scale)), int(round(y_point * scale))
-        return x, y
+        for poly_index in range(len(polygon)):
+            point = polygon[poly_index]
+            polygon[poly_index][0] = int(round(( point[0] - padding ) * scale))
+            polygon[poly_index][1] = int(round(point[1] * scale))
+        
 
     # In this case there is padding along the Y axis
     elif scales[0] > scales[1]:
         padding = end_size[0] - ((1 / original_ratio) * end_size[1])
         scale = start_size[1] / end_size[1]
         padding = padding / 2
-        x, y = int(round(x_point * scale)), int(round((y_point - padding) * scale))
-        return x, y
+        for poly_index in range(len(polygon)):
+            point = polygon[poly_index]
+            polygon[poly_index][0] = int(round(point[0] * scale))
+            polygon[poly_index][1] = int(round((point[1] - padding) * scale))
+            
 
     # There is no padding the image was evenly scaled
     elif scales[0] == scales[1]:
-        scale_x = scales[0]
-        scale_y = scales[1]
-        x, y = int(x_point * scale_x), int(y_point * scale_y)
-        return x, y
+        scale = scales[0]
+        for poly_index in range(len(polygon)):
+            point = polygon[poly_index]
+            polygon[poly_index][0] = int(round(point[0] * scale))
+            polygon[poly_index][1] = int(round(point[1] * scale))
+
+    return polygon

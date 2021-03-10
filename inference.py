@@ -33,6 +33,7 @@ def inference(cmd_args):
     * img_path: (Required) The path to the directory of images to be inferred
     * out_path: (Required) The path to the directory that segmented line snippets will be stored
     * model_in: (Required) The path to the pre-trained model weights
+    * coordinate_naming: (Required) Whether or not to save the coordinate information in each line snippet's name
     * save_raw: (Required) Whether or not to save the raw output of the semantic segmentation model
     * raw_path: (Required if save_raw is set, else Optional) The path to the directory that the raw output images will
     be stored

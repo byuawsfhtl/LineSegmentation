@@ -78,6 +78,7 @@ Configuration File Arguments:
 * img_path: The path to the directory of images to be inferred
 * out_path: The path to the directory that segmented line snippets will be stored
 * model_in: The path to the pre-trained model weights
+* coordinate_naming: Whether or not to save the coordinate information in each line snippet's name
 * save_raw: Whether or not to save the raw output of the semantic segmentation model
 * raw_path: The path to the directory that the raw output images will be stored
 * img_size: The size which all images will be resized for inference

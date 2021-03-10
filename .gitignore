@@ -37,4 +37,4 @@ data/*
 slurm*
 *.out
 *out/
-*.vs/
+.vs/

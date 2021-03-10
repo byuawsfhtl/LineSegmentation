@@ -73,7 +73,7 @@ def inference(cmd_args):
                                      configs[OUT_PATH], include_coords_in_path=configs[COORDINATE_NAMING],
                                      save_raw=configs[SAVE_RAW], raw_path=configs[RAW_PATH])
 
-    inference_loop.update(1)
+        inference_loop.update(1)
 
     print('Finished performing inference.')
 

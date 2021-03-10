@@ -2,10 +2,10 @@
 img_path: ./data/example/test_images
 # The path to the directory that segmented line snippets will be stored
 out_path: ./data/out/example/snippets
-# The path to the directory that original (resized/padded) images will be stored, if empty, originals will not be stored
-original_out_path: ./data/out/example/original
 # The path to the pre-trained model weights
 model_in: ./data/model_weights/example_model/run1
+# Whether or not to save the original coordinate information in each individual line snippet's name
+coordinate_naming: True
 # Whether or not to save the raw output of the semantic segmentation model
 save_raw: True
 # The path to the directory that the raw output images will be stored

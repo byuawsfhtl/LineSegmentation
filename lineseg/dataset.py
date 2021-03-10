@@ -19,16 +19,16 @@ def encode_single_img(path, img_size, binary=False, standardization=True):
     num_channels = 1 if binary else 3
 
     img_bytes = tf.io.read_file(path)
-    img = tf.image.decode_image(img_bytes, dtype=tf.float32, channels=num_channels)
-    img = tf.image.resize_with_pad(img, img_size[0], img_size[1])
+    original_img = tf.image.decode_image(img_bytes, dtype=tf.float32, channels=num_channels)
+    resized_img = tf.image.resize_with_pad(original_img, img_size[0], img_size[1])
 
     if standardization:
-        img = tf.image.per_image_standardization(img)
+        resized_img = tf.image.per_image_standardization(resized_img)
 
     if binary:
-        img = tf.where(img > .5, tf.ones_like(img), tf.zeros_like(img))
+        resized_img = tf.where(resized_img > .5, tf.ones_like(resized_img), tf.zeros_like(resized_img))
 
-    return img
+    return original_img, resized_img
 
 
 def encode_img_with_name(img_path, file_separator, img_size):
@@ -40,26 +40,27 @@ def encode_img_with_name(img_path, file_separator, img_size):
     :param img_size: The size of the image after resizing
     :return: The encoded image and name
     """
-    img = encode_single_img(img_path, img_size, standardization=False)
+    original_img, resized_img = encode_single_img(img_path, img_size, binary=False, standardization=True)
     img_name = tf.strings.split(tf.strings.split(img_path, sep=file_separator)[-1], sep='.')[0]
 
-    return img, img_name
+    return original_img, resized_img, img_name
 
 
 def encode_imgs(original_path, gt_path, img_size):
     """
-    This function takes the original/ground_truth file paths and converts to tensors. See encode_single_img function
+    This function takes the original_img/ground_truth file paths and converts to tensors. See encode_single_img function
     for more details. Note that the ground-truth image is encoded as a binary image.
 
-    :param original_path: The path to the original image to be encoded
+    :param original_path: The path to the original_img image to be encoded
     :param gt_path: The path to the ground-truth image to be encoded
     :param img_size: The final size of the images after resizing
-    :return: The encoded original and gt images
+    :return: The encoded original_img and gt images
     """
-    original = encode_single_img(original_path, img_size)
-    gt = encode_single_img(gt_path, img_size, binary=True)
+    # Ignore the original images that are returned because we only care about the resized images
+    _, resized_img = encode_single_img(original_path, img_size, binary=False, standardization=True)
+    _, gt_img = encode_single_img(gt_path, img_size, binary=True, standardization=False)
 
-    return original, gt
+    return resized_img, gt_img
 
 
 def get_dataset_size(csv_path):

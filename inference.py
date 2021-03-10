@@ -1,5 +1,4 @@
 import sys
-import os
 
 import tensorflow as tf
 from tqdm import tqdm
@@ -12,8 +11,8 @@ from lineseg.util import model_inference
 
 IMG_PATH = 'img_path'
 OUT_PATH = 'out_path'
-ORIGINAL_OUT_PATH = 'original_out_path'
 MODEL_IN = 'model_in'
+COORDINATE_NAMING = 'coordinate_naming'
 SAVE_RAW = 'save_raw'
 RAW_PATH = 'raw_path'
 IMG_SIZE = 'img_size'
@@ -55,30 +54,25 @@ def inference(cmd_args):
     # Create our ARU-Net Models
     model = ARUNet()
 
-    original_out_path = configs[ORIGINAL_OUT_PATH] if configs[ORIGINAL_OUT_PATH] else None
-    print('Original_out_path:', original_out_path)
-
     # Load the pre-trained model weights
     model.load_weights(configs[MODEL_IN])
 
-    dataset = ds.get_encoded_inference_dataset_from_img_path(configs[IMG_PATH], eval(configs[IMG_SIZE]))
+    dataset = ds.get_encoded_inference_dataset_from_img_path(configs[IMG_PATH], eval(configs[IMG_SIZE]))\
+        .batch(configs[BATCH_SIZE])
     dataset_size = tf.data.experimental.cardinality(dataset).numpy()
 
     # Iterate through each of the images and perform inference
     inference_loop = tqdm(total=dataset_size, position=0, leave=True)
-    for img, img_name in dataset:
-        std_img = tf.image.per_image_standardization(img)  # The inference dataset doesn't standardize the image input
-        baseline_prediction = model_inference(model, tf.expand_dims(std_img, 0))
+    for original_imgs, resized_imgs, img_names in dataset:
+        baseline_predictions = model_inference(model, resized_imgs)
 
-        # Save the raw model output if specified in configuration file
-        if configs[SAVE_RAW]:
-            pred = tf.squeeze(tf.argmax(baseline_prediction, 3))  # Get the most likely class (baseline/non-baseline)
-            encoded = tf.image.encode_jpeg(tf.expand_dims(tf.cast(pred * 255, tf.uint8), 2))  # Convert to jpeg
-            tf.io.write_file(os.path.join(configs[RAW_PATH], str(img_name.numpy(), 'utf-8') + '.jpg'), encoded)
+        # Iterate over the batch
+        for original_img, baseline_prediction, img_name in zip(original_imgs, baseline_predictions, img_names):
+            # Segment lines based on the output of the model and save individual line snippets to the given out path
+            segment_from_predictions(original_img, baseline_prediction, str(img_name.numpy(), 'utf-8'),
+                                     configs[OUT_PATH], include_coords_in_path=configs[COORDINATE_NAMING],
+                                     save_raw=configs[SAVE_RAW], raw_path=configs[RAW_PATH])
 
-        # Segment lines based on the output of the model and save individual line snippets to the given out path
-        segment_from_predictions(img, baseline_prediction, str(img_name.numpy(), 'utf-8'), configs[OUT_PATH],
-                                 include_coords_in_path=True, save_original_image_path=original_out_path)
         inference_loop.update(1)
 
     print('Finished performing inference.')

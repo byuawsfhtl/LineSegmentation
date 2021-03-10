@@ -520,9 +520,7 @@ def map_points_to_original_img(polygon, start_size, end_size):
     :param start_size: The original size dimensions of the image before the resizing
     :param end_size: The size dimensions of the image after the resizing
     """
-
     original_ratio = start_size[1] / start_size[0]
-    resized_ratio = end_size[1] / end_size[0]
     scales = [start_size[1] / end_size[1], start_size[0] / end_size[0]]
 
     # In this case there is padding along the X Axis

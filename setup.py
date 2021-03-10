@@ -8,7 +8,7 @@ with open(path.join(here, 'README.md')) as f:
 
 setup(
     name='lineseg',
-    version='0.1',
+    version='0.2',
     description='Line-Level Segmentation using an ARU-Net architecture',
     long_description=long_description,
     long_description_content_type='text/markdown',

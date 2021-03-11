@@ -106,8 +106,8 @@ def segment_from_predictions(original_img, baseline_prediction, filename, save_p
 
             polygon = map_points_to_original_img(polygon, original_img.shape, baseline_prediction.shape)
 
-            x_coords = [poly[0] for poly in polygon]
-            y_coords = [poly[1] for poly in polygon]
+            x_coords = [poly[1] for poly in polygon]
+            y_coords = [poly[0] for poly in polygon]
 
             left_y = np.min(y_coords)
             left_x = np.min(x_coords)

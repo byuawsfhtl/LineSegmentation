@@ -1,9 +1,11 @@
 # The path to the directory of images to be inferred
-img_path: ./data/example/test_images
+img_path: ./data/test_images
+# Include subdirectories of img_path, if set to False any directories within img_path will be ignored
+img_path_subdirs: False
 # The path to the directory that segmented line snippets will be stored
 out_path: ./data/out/example/snippets
 # The path to the pre-trained model weights
-model_in: ./data/model_weights/example_model/run1
+model_in: ./data/model_weights/lineseg_model/run1
 # Whether or not to save the original coordinate information in each individual line snippet's name
 coordinate_naming: True
 # Whether or not to save the raw output of the semantic segmentation model

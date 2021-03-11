@@ -10,6 +10,7 @@ from lineseg.seg import segment_from_predictions
 from lineseg.util import model_inference
 
 IMG_PATH = 'img_path'
+IMG_PATH_SUBDIRS = 'img_path_subdirs'
 OUT_PATH = 'out_path'
 MODEL_IN = 'model_in'
 COORDINATE_NAMING = 'coordinate_naming'
@@ -31,6 +32,7 @@ def inference(cmd_args):
 
     Configuration File Arguments:
     * img_path: (Required) The path to the directory of images to be inferred
+    * img_path_subdirs: (Required): Whether or not to include images included in subdirectories of the img_path
     * out_path: (Required) The path to the directory that segmented line snippets will be stored
     * model_in: (Required) The path to the pre-trained model weights
     * coordinate_naming: (Required) Whether or not to save the coordinate information in each line snippet's name
@@ -58,7 +60,8 @@ def inference(cmd_args):
     # Load the pre-trained model weights
     model.load_weights(configs[MODEL_IN])
 
-    dataset = ds.get_encoded_inference_dataset_from_img_path(configs[IMG_PATH], eval(configs[IMG_SIZE]))\
+    dataset = ds.get_encoded_inference_dataset_from_img_path(configs[IMG_PATH], eval(configs[IMG_SIZE]),
+                                                             include_subdirs=configs[IMG_PATH_SUBDIRS])\
         .batch(configs[BATCH_SIZE])
     dataset_size = tf.data.experimental.cardinality(dataset).numpy()
 

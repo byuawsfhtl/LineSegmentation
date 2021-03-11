@@ -76,6 +76,7 @@ arguments are given below:
 
 Configuration File Arguments:
 * img_path: The path to the directory of images to be inferred
+* img_path_subdirs: Whether or not to include images included in subdirectories of the img_path
 * out_path: The path to the directory that segmented line snippets will be stored
 * model_in: The path to the pre-trained model weights
 * coordinate_naming: Whether or not to save the coordinate information in each line snippet's name

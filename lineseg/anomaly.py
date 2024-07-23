@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,6 +11,7 @@ class AnomalyDetector():
     def __init__(self, threshold):
         self.density_score = 0
         self.threshold = threshold
+        self.image_score = 0
 
     def load_image(self, image_path):
         # Load the image from the file path
@@ -31,12 +33,20 @@ class AnomalyDetector():
         baseline_img = sharpen_image(baseline_img)
 
         # cluster baselines with DBSCAN
-        baselines = cluster(baseline_img, min_points)
+        baselines = cluster(baseline_img, 5, min_points=min_points)
+
+        if len(baselines) == 0:
+            print("No baseline clusters found.")
+            return
+
+        num_clusters = len(baselines)
 
         # Prepare the plot
         plt.figure(figsize=(10, 10))
         plt.imshow(np.array(baseline_img), cmap='gray')
 
+        quality_score = 0
+        
         # Ensure that each cluster is a consistent structure
         for cluster_points in baselines:
             cluster_points = np.array(cluster_points)
@@ -46,6 +56,9 @@ class AnomalyDetector():
             # Perform convex hull calculation and anomaly scoring
             hull = ConvexHull(cluster_points)
             hull_vertices = cluster_points[hull.vertices]
+
+            # shift vertices down a bit
+            hull_vertices += 3
 
             if plot_hull:
                 # Plot the convex hull
@@ -60,15 +73,21 @@ class AnomalyDetector():
             average_pixel_value = np.mean(np.array(baseline_img)[mask])
             print(f'Cluster with average pixel value: {average_pixel_value}')
 
-            # Example anomaly scoring (adjust based on your criteria)
-            if average_pixel_value < self.threshold:
-                print(f'Anomaly detected in cluster with average pixel value: {average_pixel_value}')
+            quality_score += average_pixel_value
 
+        # take average quality score to decide whether to tag as anomaly or not
+        quality_score /= num_clusters
+        if quality_score < self.threshold:
+            print(f'Anomaly detected for image: {os.path.basename(baseline_img_path)}')
+            print(f"Total quality score was: {(quality_score * 100):.2f}%")
+        else:
+            print(f"No anomaly detected. Here is the overall quality score: {(quality_score * 100):.2f}%")
+    
         if plot_hull:
             # Show the plot and block execution until the plot window is closed
             plt.title('Convex Hulls over Baseline Image')
             plt.show()
 
 
-anamoly_detector = AnomalyDetector(0.7)
-anamoly_detector.flag_anomalies(r'C:\Users\Mark Clement\FHTL\LineSegmentation\data\example\baselines\eval2011-0.jpg', 50, True)
+anamoly_detector = AnomalyDetector(0.8)
+anamoly_detector.flag_anomalies(r'C:\Users\Mark Clement\FHTL\LineSegmentation\data\example\baselines\004005955_00781.jpg', 50, True)

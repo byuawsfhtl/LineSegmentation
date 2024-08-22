@@ -55,12 +55,12 @@ class Augmentor:
 
     def random_img_quality(self, image, gt_image, seed):
         max_img_quality = random.randint(10, 90)
-        min_img_quality = random.randint(0, max_img_quality)
+        min_img_quality = random.randint(0, max_img_quality - 1)
         image = tf.image.stateless_random_jpeg_quality(image, min_img_quality, max_img_quality, seed)
         return image, gt_image
 
     def random_contrast(self, image, gt_image, seed):
-        lower = random.uniform(0.5, 1.0)
+        lower = random.uniform(0.5, 0.99)
         upper = random.uniform(1.0, 2.5)
         image = tf.image.stateless_random_contrast(image, lower, upper, seed)
         return image, gt_image

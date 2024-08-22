@@ -25,3 +25,7 @@ learning_rate: 0.001
 # number shouldn't change. However, if you are running into memory constraints, you can lower this number.
 # A shuffle_size of 0 results in no shuffling
 shuffle_size: 1
+
+# whether or not to use data augmentation to attempt to 
+# make training more robust and better at generalizing
+augment: False

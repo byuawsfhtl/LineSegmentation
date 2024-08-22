@@ -5,6 +5,7 @@ import yaml
 import lineseg.dataset as ds
 from lineseg.training import ModelTrainer
 from lineseg.model import ARUNet
+from lineseg.augmentor import Augmentor
 
 # Define the string names of all configuration arguments
 TRAIN_CSV_PATH = 'train_csv_path'
@@ -17,6 +18,7 @@ EPOCHS = 'epochs'
 BATCH_SIZE = 'batch_size'
 LEARNING_RATE = 'learning_rate'
 SHUFFLE_SIZE = 'shuffle_size'
+AUGMENT = 'augment'
 
 
 def train_model(cmd_args):
@@ -90,9 +92,13 @@ def train_model(cmd_args):
     if configs[MODEL_IN]:
         model.load_weights(configs[MODEL_IN])
 
+    augmentor = None
+    if configs[AUGMENT]:
+        augmentor = Augmentor()
+
     # Create the trainer object and load in configuration settings
     trainer = ModelTrainer(model, configs[EPOCHS], configs[BATCH_SIZE], train_dataset, train_dataset_size, val_dataset,
-                           val_dataset_size, configs[MODEL_OUT], lr=configs[LEARNING_RATE])
+                           val_dataset_size, configs[MODEL_OUT], augmentor, lr=configs[LEARNING_RATE])
 
     # Train the model
     model, losses, ious = trainer.train()

@@ -11,7 +11,7 @@ class ModelTrainer:
     """
 
     def __init__(self, model, epochs, batch_size, train_dataset, train_dataset_size, val_dataset, val_dataset_size,
-                 model_out, lr=1e-3):
+                 model_out, augmentor=None, lr=1e-3):
         """
         Set up the necessary variables that will be used during training, including the model, optimizer,
         encoder, and other metrics.
@@ -34,6 +34,7 @@ class ModelTrainer:
         self.val_dataset = val_dataset
         self.val_dataset_size = val_dataset_size
         self.model_out = model_out
+        self.augmentor = augmentor
 
         self.optimizer = tf.keras.optimizers.RMSprop(learning_rate=lr)
         self.objective = tf.keras.losses.SparseCategoricalCrossentropy()
@@ -67,6 +68,9 @@ class ModelTrainer:
         :param labels: mini-batch of labels in tensor format
         :return: None
         """
+        if self.augmentor is not None:
+            images, labels = self.augmentor.apply_transformations(images, labels)
+
         with tf.GradientTape() as tape:
             predictions = self.model(images, training=True)
             loss = self.objective(labels, predictions)
